@@ -1,0 +1,75 @@
+<!doctype html>
+<html lang="uk">
+<head>
+  <meta charset="utf-8">
+  <title>Книга</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+<p><a href="./">← До каталогу</a></p>
+<h1 id="title">…</h1>
+<p id="meta"></p>
+
+<h3>Відгуки</h3>
+<ul id="comments"></ul>
+
+<h3>Додати відгук</h3>
+<form id="add">
+  <div class="row"><input name="author" placeholder="Ваше ім'я" required maxlength="64"></div>
+  <div class="row"><textarea name="text" placeholder="Ваш відгук" required maxlength="1000" rows="3"></textarea></div>
+  <button>Додати</button>
+</form>
+<p id="error" class="error"></p>
+
+<script>
+  const id = new URLSearchParams(location.search).get('id');
+  const errorBox = document.getElementById('error');
+  const showError = async r => {
+    const err = await r.json();
+    errorBox.textContent = `${err.status} ${err.error}: ${err.message}`;
+  };
+
+  async function load() {
+    const r = await fetch('books/' + encodeURIComponent(id));
+    if (!r.ok) { await showError(r); document.getElementById('title').textContent = 'Книгу не знайдено'; return; }
+    const { book, comments } = await r.json();
+    document.title = book.title;
+    document.getElementById('title').textContent = book.title;
+    document.getElementById('meta').textContent = `${book.author}, ${book.pubYear}`;
+
+    const ul = document.getElementById('comments');
+    ul.innerHTML = '';
+    if (!comments.items.length) ul.innerHTML = '<li>Ще немає відгуків</li>';
+    comments.items.forEach(c => {
+      const li = document.createElement('li');
+      const b = document.createElement('b');
+      b.textContent = c.author + ': ';
+      const small = document.createElement('small');
+      small.textContent = ' (' + new Date(c.createdAt).toLocaleString() + ') ';
+      const del = document.createElement('button');
+      del.textContent = 'Видалити';
+      del.onclick = () => remove(c.id);
+      li.append(b, c.text, small, del);
+      ul.appendChild(li);
+    });
+  }
+
+  async function remove(commentId) {
+    const r = await fetch(`books/${id}/comments/${commentId}`, { method: 'DELETE' });
+    if (r.ok) { errorBox.textContent = ''; load(); } else showError(r);
+  }
+
+  document.getElementById('add').addEventListener('submit', async e => {
+    e.preventDefault();
+    const r = await fetch(`books/${id}/comments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
+    });
+    if (r.ok) { e.target.reset(); errorBox.textContent = ''; load(); } else showError(r);
+  });
+
+  load();
+</script>
+</body>
+</html>

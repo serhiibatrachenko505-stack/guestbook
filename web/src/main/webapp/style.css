@@ -1,0 +1,7 @@
+body { font-family: system-ui, sans-serif; max-width: 800px; margin: 2rem auto; padding: 0 1rem; }
+.row { display: flex; gap: .5rem; align-items: center; margin: .5rem 0; }
+input, select, textarea, button { padding: .4rem; font: inherit; }
+input[name="q"], textarea { flex: 1; width: 100%; }
+li { margin: .35rem 0; }
+small { color: #777; }
+.error { color: #b00020; font-weight: 600; }
