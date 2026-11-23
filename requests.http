@@ -1,0 +1,53 @@
+### Список книг
+GET http://localhost:8080/api/books
+
+### Query-параметри: пошук, сортування, пагінація
+GET http://localhost:8080/api/books?q=martin&sort=year,desc&page=0&size=5
+
+### Path-параметр: одна книга
+GET http://localhost:8080/api/books/1
+
+### 404: книги не існує
+GET http://localhost:8080/api/books/999
+
+### 400: id не число
+GET http://localhost:8080/api/books/abc
+
+### Додати книгу -> 201
+POST http://localhost:8080/api/books
+Content-Type: application/json
+
+{
+  "title": "Patterns of Enterprise Application Architecture",
+  "author": "Martin Fowler",
+  "pubYear": 2002
+}
+
+### Відгуки до книги
+GET http://localhost:8080/api/books/1/comments
+
+### Додати відгук -> 201
+POST http://localhost:8080/api/comments
+Content-Type: application/json
+
+{
+  "bookId": 1,
+  "author": "Student",
+  "text": "Interesting book"
+}
+
+### 400: порожній автор
+POST http://localhost:8080/api/comments
+Content-Type: application/json
+
+{
+  "bookId": 1,
+  "author": "",
+  "text": "Interesting book"
+}
+
+### Видалити свіжий відгук -> 204 (id візьміть з відповіді POST)
+DELETE http://localhost:8080/api/books/1/comments/3
+
+### 409: відгуку більше 24 годин (тестовий відгук Андрія)
+DELETE http://localhost:8080/api/books/1/comments/2

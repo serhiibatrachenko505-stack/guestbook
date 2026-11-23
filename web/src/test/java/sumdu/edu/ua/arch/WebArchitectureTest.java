@@ -6,8 +6,6 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
-import jakarta.servlet.Filter;
-import jakarta.servlet.http.HttpServlet;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 
@@ -43,19 +41,20 @@ class WebArchitectureTest {
     }
 
     @Test
-    void servletsShouldResideOnlyInWeb() {
+    void controllersShouldResideOnlyInWeb() {
         classes()
-                .that().areAssignableTo(HttpServlet.class)
-                .or().haveSimpleNameEndingWith("Servlet")
-                .should().resideInAPackage("sumdu.edu.ua.web..")
+                .that().haveSimpleNameEndingWith("Controller")
+                .should().resideInAPackage("sumdu.edu.ua.web.controller..")
                 .check(classes);
     }
 
     @Test
-    void filtersShouldResideInWebError() {
-        classes()
-                .that().implement(Filter.class)
-                .should().resideInAPackage("sumdu.edu.ua.web.error..")
+    void javalinShouldBeUsedOnlyInWeb() {
+        noClasses()
+                .that().resideOutsideOfPackage("sumdu.edu.ua.web..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("io.javalin..")
+                .because("HTTP-фреймворк — деталь веб-рівня; core і persistence його не знають")
                 .check(classes);
     }
 
@@ -69,11 +68,11 @@ class WebArchitectureTest {
     }
 
     @Test
-    void coreShouldNotDependOnServletOrJdbc() {
+    void coreShouldNotDependOnHttpOrJdbc() {
         noClasses()
                 .that().resideInAPackage("sumdu.edu.ua.core..")
                 .should().dependOnClassesThat()
-                .resideInAnyPackage("jakarta.servlet..", "java.sql..", "javax.sql..")
+                .resideInAnyPackage("jakarta.servlet..", "io.javalin..", "java.sql..", "javax.sql..")
                 .check(classes);
     }
 }

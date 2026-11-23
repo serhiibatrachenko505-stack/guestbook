@@ -12,12 +12,12 @@
     </parent>
 
     <artifactId>web</artifactId>
-    <packaging>war</packaging>
+    <!-- Javalin запускається як звичайний Java-застосунок з main(), тому jar, а не war -->
+    <packaging>jar</packaging>
     <name>web</name>
 
     <properties>
-        <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
-        <jetty.version>11.0.24</jetty.version>
+        <javalin.version>6.2.0</javalin.version>
         <jackson.version>2.17.2</jackson.version>
         <logback.version>1.5.6</logback.version>
     </properties>
@@ -35,19 +35,20 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Javalin (всередині — вбудований Jetty) -->
         <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <version>${jakarta.servlet.version}</version>
-            <scope>provided</scope>
+            <groupId>io.javalin</groupId>
+            <artifactId>javalin</artifactId>
+            <version>${javalin.version}</version>
         </dependency>
 
+        <!-- JSON -->
         <dependency>
             <groupId>com.fasterxml.jackson.core</groupId>
             <artifactId>jackson-databind</artifactId>
             <version>${jackson.version}</version>
         </dependency>
-        <!-- серіалізація java.time.Instant у JSON -->
+        <!-- серіалізація java.time.Instant -->
         <dependency>
             <groupId>com.fasterxml.jackson.datatype</groupId>
             <artifactId>jackson-datatype-jsr310</artifactId>
@@ -68,26 +69,13 @@
 
     <build>
         <plugins>
+            <!-- запуск: mvn -pl web exec:java -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>3.4.0</version>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.5.0</version>
                 <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
-                </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>${jetty.version}</version>
-                <configuration>
-                    <webApp>
-                        <contextPath>/</contextPath>
-                    </webApp>
-                    <httpConnector>
-                        <port>8080</port>
-                    </httpConnector>
+                    <mainClass>sumdu.edu.ua.web.JavalinBookApp</mainClass>
                 </configuration>
             </plugin>
         </plugins>

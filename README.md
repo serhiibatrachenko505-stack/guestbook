@@ -1,76 +1,68 @@
-# Лабораторна робота 2. Трирівнева архітектура
+# Лабораторна робота 3. Javalin
 
-Каталог книг з відгуками. Проєкт розбитий на три Maven-модулі: core (доменна логіка), persistence (робота з БД через JDBC/H2) і web (сервлети). Правила залежностей між модулями перевіряються тестами ArchUnit.
+Каталог книг з відгуками. У цій лабораторній веб-рівень переписаний з Servlet API на мікрофреймворк Javalin. Модулі core і persistence залишились такими самими, як у лабораторній 2, змінився тільки модуль web.
+
+Гілка: `lab3-javalin`
 
 ## Версії
 
 - JDK 17
 - Maven 3.8.4
-- Jetty 11.0.24
+- Javalin 6.2.0 (всередині вбудований Jetty 11)
 - H2 2.2.224
+- Jackson 2.17.2
 - ArchUnit 1.3.0, JUnit 5.10.2
 
 ## Модулі
 
-- `core` — доменні класи (Book, Comment, Page, PageRequest), порти (CatalogRepositoryPort, CommentRepositoryPort), сервіси з бізнес-правилами (BookService, CommentService) і доменні винятки. Не залежить ні від чого.
-- `persistence` — реалізація портів через JDBC (JdbcBookRepository, JdbcCommentRepository), підключення до БД (Db) і створення схеми (DbInit, schema.sql, data.sql). Залежить від core.
-- `web` — сервлет BooksServlet, фільтр помилок ErrorFilter, HTML-сторінки. Пакет `config` (AppInit, Beans) збирає всі залежності при старті. Сервлети працюють тільки з сервісами з core.
+- `core` — доменні класи, порти і сервіси з бізнес-правилами (без змін)
+- `persistence` — JDBC-репозиторії і робота з H2 (без змін)
+- `web` — застосунок на Javalin:
+  - `JavalinBookApp` — клас з методом main(), створює Javalin, додає middleware, маршрути і обробники помилок, запускає сервер
+  - `controller/BooksController`, `controller/CommentsController` — маршрути
+  - `error/ErrorHandlers` — централізована обробка винятків через app.exception()
+  - `resources/public` — HTML-сторінки, які звертаються до API через fetch()
 
 ## Як запустити
 
 ```
 mvn clean install
-mvn -pl web jetty:run
+mvn -pl web exec:java
 ```
 
-Перша команда збирає всі модулі і запускає тести (разом з ArchUnit), друга запускає Jetty.
 Після запуску відкрити http://localhost:8080/
 
-Зупинити сервер: Ctrl+C
+Зупинити: Ctrl+C
 
 ## База даних
 
 - URL: `jdbc:h2:file:./data/library;AUTO_SERVER=TRUE`
-- Користувач `sa`, пароль порожній
 - Файл: `data/library.mv.db` у корені проєкту
-- Таблиці створюються самі при старті, при першому запуску додаються тестові книги і два відгуки (один з них старий, щоб перевірити правило 24 годин).
 
-## Ендпоїнти
+## Маршрути
 
-- `GET /books?q=&page=&size=&sort=` — список книг з пошуком і пагінацією. sort: `id`, `title`, `author`, `year`, можна з напрямком, наприклад `year,desc`
-- `POST /books` — додати книгу (JSON: title, author, pubYear) → 201
-- `GET /books/{id}` — книга і її відгуки
-- `GET /books/{id}/comments?author=&since=&page=&size=` — відгуки до книги
-- `POST /books/{id}/comments` — додати відгук (JSON: author, text) → 201
-- `DELETE /books/{id}/comments/{commentId}` — видалити відгук → 204 (або 409, якщо відгуку більше 24 годин)
+| Метод | URL | Опис | Відповідь |
+|---|---|---|---|
+| GET | `/api/books?q=&page=&size=&sort=` | список книг з пошуком, сортуванням і пагінацією | 200 |
+| GET | `/api/books/{id}` | одна книга | 200 / 404 |
+| POST | `/api/books` | додати книгу (JSON: title, author, pubYear) | 201 / 400 |
+| GET | `/api/books/{id}/comments?author=&since=` | відгуки до книги | 200 / 404 |
+| POST | `/api/comments` | додати відгук (JSON: bookId, author, text) | 201 / 400 / 404 |
+| DELETE | `/api/books/{bookId}/comments/{commentId}` | видалити відгук | 204 / 404 / 409 |
 
-## Коди відповідей
+Готові запити для перевірки лежать у файлі `requests.http` (їх можна відкрити в IntelliJ IDEA або VS Code REST Client, або повторити в Postman).
 
-- 200 / 201 / 204 — успіх
-- 400 — неправильні дані або параметри
-- 404 — книгу чи відгук не знайдено
-- 405 — метод не підтримується
-- 409 — відгук старший за 24 години, видалити не можна
-- 500 — помилка сервера
+## Middleware і помилки
 
-Усі помилки повертаються в однаковому JSON-форматі:
+- `app.before()` пише в лог кожен запит, наприклад `INFO GET /api/books`
+- `app.exception()` перетворює винятки на JSON-відповіді: 400 (неправильні дані), 404 (не знайдено), 409 (відгук старший за 24 години), 500 (інша помилка)
+
+Приклад помилки:
 
 ```
-{"timestamp":"...","status":409,"error":"Conflict","message":"Comment can be deleted only within 24 hours after creation","path":"/books/1/comments/2"}
+{"timestamp":"...","status":404,"error":"Not Found","message":"Book 999 not found","path":"/api/books/999"}
 ```
-
-## Логування
-
-- INFO — створення і видалення відгуків (id, книга, автор, довжина тексту)
-- WARN — помилки 4xx
-- ERROR — помилки 5xx (зі stacktrace)
 
 ## Тести
 
-`mvn test` запускає тести ArchUnit у кожному модулі і тест бізнес-правил CommentService. Перевіряється:
-
-- web не залежить від persistence
-- core не залежить від Servlet API і JDBC
-- сервлети лежать тільки у web
-- репозиторії лежать тільки у persistence
-- усі класи core мають публічні конструктори
+`mvn test` запускає ArchUnit-тести у всіх модулях. У web додатково перевіряється, що Javalin використовується тільки у веб-рівні, а контролери лежать у пакеті web.controller.

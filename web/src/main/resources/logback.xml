@@ -9,6 +9,7 @@
     <!-- Наші класи: INFO і вище (для SQL-деталей можна поставити DEBUG) -->
     <logger name="sumdu.edu.ua" level="INFO"/>
     <logger name="org.eclipse.jetty" level="WARN"/>
+    <logger name="io.javalin" level="INFO"/>
 
     <root level="INFO">
         <appender-ref ref="CONSOLE"/>
