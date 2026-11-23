@@ -9,12 +9,14 @@ import java.util.ArrayList;
 import java.util.Optional;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Repository;
 import sumdu.edu.ua.core.domain.Comment;
 import sumdu.edu.ua.core.domain.Page;
 import sumdu.edu.ua.core.domain.PageRequest;
 import sumdu.edu.ua.core.port.CommentRepositoryPort;
 
 /** Реалізація порту відгуків через JDBC/H2. */
+@Repository
 public class JdbcCommentRepository implements CommentRepositoryPort {
     private static final Logger log = LoggerFactory.getLogger(JdbcCommentRepository.class);
 

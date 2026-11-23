@@ -27,8 +27,8 @@ class CoreArchitectureTest {
         noClasses()
                 .that().resideInAPackage("sumdu.edu.ua.core..")
                 .should().dependOnClassesThat()
-                .resideInAnyPackage("jakarta.servlet..", "java.sql..", "javax.sql..", "org.h2..")
-                .because("доменний шар не повинен знати про HTTP та JDBC")
+                .resideInAnyPackage("jakarta.servlet..", "java.sql..", "javax.sql..", "org.h2..", "org.springframework..")
+                .because("доменний шар не повинен знати про HTTP, JDBC та Spring")
                 .check(classes);
     }
 

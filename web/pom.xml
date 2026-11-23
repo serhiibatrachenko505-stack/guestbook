@@ -4,6 +4,7 @@
          xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
 
+    <!-- parent залишається нашим; версії Spring Boot беруться з BOM spring-boot-dependencies у parent -->
     <parent>
         <groupId>sumdu.edu.ua</groupId>
         <artifactId>mpf-labs-parent</artifactId>
@@ -12,15 +13,9 @@
     </parent>
 
     <artifactId>web</artifactId>
-    <packaging>war</packaging>
+    <!-- застосунок запускається з main() із вбудованим Tomcat, тому jar -->
+    <packaging>jar</packaging>
     <name>web</name>
-
-    <properties>
-        <jakarta.servlet.version>5.0.0</jakarta.servlet.version>
-        <jetty.version>11.0.24</jetty.version>
-        <jackson.version>2.17.2</jackson.version>
-        <logback.version>1.5.6</logback.version>
-    </properties>
 
     <dependencies>
         <!-- залежимо від core та persistence -->
@@ -35,60 +30,44 @@
             <version>${project.version}</version>
         </dependency>
 
+        <!-- Основа Spring Boot: IoC-контейнер, автоконфігурація, логування (Logback) -->
         <dependency>
-            <groupId>jakarta.servlet</groupId>
-            <artifactId>jakarta.servlet-api</artifactId>
-            <version>${jakarta.servlet.version}</version>
-            <scope>provided</scope>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter</artifactId>
+        </dependency>
+        <!-- Веб-стартер: вбудований Tomcat + Servlet API + Jackson -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
 
+        <!-- тест завантаження контексту (@SpringBootTest) -->
         <dependency>
-            <groupId>com.fasterxml.jackson.core</groupId>
-            <artifactId>jackson-databind</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-        <!-- серіалізація java.time.Instant у JSON -->
-        <dependency>
-            <groupId>com.fasterxml.jackson.datatype</groupId>
-            <artifactId>jackson-datatype-jsr310</artifactId>
-            <version>${jackson.version}</version>
-        </dependency>
-
-        <!-- логування -->
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>ch.qos.logback</groupId>
-            <artifactId>logback-classic</artifactId>
-            <version>${logback.version}</version>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
     <build>
         <plugins>
+            <!-- mvn -pl web spring-boot:run  та  java -jar web/target/web-1.0.0-SNAPSHOT.jar -->
             <plugin>
-                <groupId>org.apache.maven.plugins</groupId>
-                <artifactId>maven-war-plugin</artifactId>
-                <version>3.4.0</version>
+                <groupId>org.springframework.boot</groupId>
+                <artifactId>spring-boot-maven-plugin</artifactId>
+                <version>${spring-boot.version}</version>
                 <configuration>
-                    <failOnMissingWebXml>false</failOnMissingWebXml>
+                    <mainClass>sumdu.edu.ua.web.AppInit</mainClass>
+                    <!-- запуск з кореня проєкту, щоб БД лежала в ./data, як у попередніх лабах -->
+                    <workingDirectory>${maven.multiModuleProjectDirectory}</workingDirectory>
                 </configuration>
-            </plugin>
-
-            <plugin>
-                <groupId>org.eclipse.jetty</groupId>
-                <artifactId>jetty-maven-plugin</artifactId>
-                <version>${jetty.version}</version>
-                <configuration>
-                    <webApp>
-                        <contextPath>/</contextPath>
-                    </webApp>
-                    <httpConnector>
-                        <port>8080</port>
-                    </httpConnector>
-                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>repackage</goal>
+                        </goals>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>

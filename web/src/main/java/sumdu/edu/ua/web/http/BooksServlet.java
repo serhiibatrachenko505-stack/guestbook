@@ -8,7 +8,8 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import sumdu.edu.ua.config.Beans;
+import org.springframework.stereotype.Component;
+import sumdu.edu.ua.config.LibraryProperties;
 import sumdu.edu.ua.core.domain.Book;
 import sumdu.edu.ua.core.domain.Comment;
 import sumdu.edu.ua.core.domain.PageRequest;
@@ -27,17 +28,21 @@ import sumdu.edu.ua.web.error.HttpError;
  * DELETE /books/{id}/comments/{commentId}   видалити відгук (24 години)  -> 204 / 409
  * </pre>
  * Сервлет знає лише сервіси з core і нічого не знає про JDBC.
+ * Є бін Spring: залежності приходять через конструктор (constructor injection).
  */
+@Component
 public class BooksServlet extends HttpServlet {
     private static final Logger log = LoggerFactory.getLogger(BooksServlet.class);
 
-    private BookService books;
-    private CommentService comments;
+    private final BookService books;
+    private final CommentService comments;
+    private final int defaultPageSize;
 
-    @Override
-    public void init() {
-        books = Beans.bookService();
-        comments = Beans.commentService();
+    public BooksServlet(BookService books, CommentService comments, LibraryProperties props) {
+        this.books = books;
+        this.comments = comments;
+        this.defaultPageSize = props.books().defaultPageSize();
+        log.info("BooksServlet created via constructor injection (default page size = {})", defaultPageSize);
     }
 
     @Override
@@ -83,10 +88,10 @@ public class BooksServlet extends HttpServlet {
         resp.setStatus(HttpServletResponse.SC_NO_CONTENT);
     }
 
-    // handlers
+    // ---------- handlers ----------
 
     private void listBooks(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        PageRequest page = Params.pageRequest(req, 10);
+        PageRequest page = Params.pageRequest(req, defaultPageSize);
         Json.write(resp, 200, books.search(req.getParameter("q"), page));
     }
 
@@ -120,7 +125,7 @@ public class BooksServlet extends HttpServlet {
         Json.write(resp, HttpServletResponse.SC_CREATED, saved);
     }
 
-    // routing helpers
+    // ---------- routing helpers ----------
 
     /** "/5/comments/7" -> ["5", "comments", "7"]; null або "/" -> []. */
     private static String[] path(HttpServletRequest req) {

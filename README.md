@@ -1,76 +1,74 @@
-# Лабораторна робота 2. Трирівнева архітектура
+# Лабораторна робота 4. Spring Core & Boot
 
-Каталог книг з відгуками. Проєкт розбитий на три Maven-модулі: core (доменна логіка), persistence (робота з БД через JDBC/H2) і web (сервлети). Правила залежностей між модулями перевіряються тестами ArchUnit.
+Каталог книг з відгуками, переведений на Spring Boot. Основа — лабораторна 2 (модулі core / persistence / web, сервлети). Тепер об'єкти створює і зв'язує між собою контейнер Spring (IoC), а параметри задаються в `application.yaml`.
+
+Гілка: `lab4-spring`
 
 ## Версії
 
 - JDK 17
 - Maven 3.8.4
-- Jetty 11.0.24
+- Spring Boot 3.3.4 (вбудований Tomcat 10.1)
 - H2 2.2.224
-- ArchUnit 1.3.0, JUnit 5.10.2
-
-## Модулі
-
-- `core` — доменні класи (Book, Comment, Page, PageRequest), порти (CatalogRepositoryPort, CommentRepositoryPort), сервіси з бізнес-правилами (BookService, CommentService) і доменні винятки. Не залежить ні від чого.
-- `persistence` — реалізація портів через JDBC (JdbcBookRepository, JdbcCommentRepository), підключення до БД (Db) і створення схеми (DbInit, schema.sql, data.sql). Залежить від core.
-- `web` — сервлет BooksServlet, фільтр помилок ErrorFilter, HTML-сторінки. Пакет `config` (AppInit, Beans) збирає всі залежності при старті. Сервлети працюють тільки з сервісами з core.
+- ArchUnit 1.3.0, JUnit 5
 
 ## Як запустити
 
 ```
 mvn clean install
-mvn -pl web jetty:run
+mvn -pl web spring-boot:run
 ```
 
-Перша команда збирає всі модулі і запускає тести (разом з ArchUnit), друга запускає Jetty.
+Або після збирання: `java -jar web/target/web-1.0.0-SNAPSHOT.jar`, або кнопкою Run у класі `AppInit` в IntelliJ.
+
 Після запуску відкрити http://localhost:8080/
 
-Зупинити сервер: Ctrl+C
+## Біни
+
+| Бін | Як створюється | Модуль |
+|---|---|---|
+| `JdbcBookRepository`, `JdbcCommentRepository` | `@Repository`, знаходяться сканером | persistence |
+| `SchemaInitializer` | `@Component`, `@PostConstruct` створює схему БД | persistence |
+| `BookService`, `CommentService` | `@Bean` у `AppConfig` (core без анотацій Spring) | web/config |
+| `Clock` | кастомний `@Bean` у `AppConfig` | web/config |
+| `LibraryProperties` | `@ConfigurationProperties(prefix = "library")` | web/config |
+| `LibraryInfoService` | `@Service` | web |
+| `BooksServlet` | `@Component`, ін'єкція через конструктор | web |
+| `InfoServlet` | `@Component`, ін'єкція через поле (`@Autowired`, `@Value`) | web |
+| `ServletConfig` | `@Configuration`, реєструє сервлети і фільтр замість web.xml | web/config |
+| `BeansReport` | `@Component`, після старту виводить список бінів у лог | web/config |
+
+## Параметри (application.yaml)
+
+```yaml
+spring.application.name: library-app
+server.port: 8080
+library:
+  title: "Каталог книг"
+  version: "4.0"
+  books.default-page-size: 10
+  comments.delete-window-hours: 24
+```
+
+Наприклад, якщо змінити `delete-window-hours` на 48, правило видалення відгуків зміниться без зміни коду.
 
 ## База даних
 
 - URL: `jdbc:h2:file:./data/library;AUTO_SERVER=TRUE`
-- Користувач `sa`, пароль порожній
 - Файл: `data/library.mv.db` у корені проєкту
-- Таблиці створюються самі при старті, при першому запуску додаються тестові книги і два відгуки (один з них старий, щоб перевірити правило 24 годин).
 
 ## Ендпоїнти
 
-- `GET /books?q=&page=&size=&sort=` — список книг з пошуком і пагінацією. sort: `id`, `title`, `author`, `year`, можна з напрямком, наприклад `year,desc`
-- `POST /books` — додати книгу (JSON: title, author, pubYear) → 201
-- `GET /books/{id}` — книга і її відгуки
-- `GET /books/{id}/comments?author=&since=&page=&size=` — відгуки до книги
-- `POST /books/{id}/comments` — додати відгук (JSON: author, text) → 201
-- `DELETE /books/{id}/comments/{commentId}` — видалити відгук → 204 (або 409, якщо відгуку більше 24 годин)
-
-## Коди відповідей
-
-- 200 / 201 / 204 — успіх
-- 400 — неправильні дані або параметри
-- 404 — книгу чи відгук не знайдено
-- 405 — метод не підтримується
-- 409 — відгук старший за 24 години, видалити не можна
-- 500 — помилка сервера
-
-Усі помилки повертаються в однаковому JSON-форматі:
-
-```
-{"timestamp":"...","status":409,"error":"Conflict","message":"Comment can be deleted only within 24 hours after creation","path":"/books/1/comments/2"}
-```
-
-## Логування
-
-- INFO — створення і видалення відгуків (id, книга, автор, довжина тексту)
-- WARN — помилки 4xx
-- ERROR — помилки 5xx (зі stacktrace)
+- `GET /` — сторінка каталогу
+- `GET /info` — інформація про застосунок (з application.yaml)
+- `GET /books?q=&page=&size=&sort=` — список книг
+- `GET /books/{id}` — книга і відгуки
+- `POST /books` — додати книгу
+- `POST /books/{id}/comments` — додати відгук
+- `DELETE /books/{id}/comments/{commentId}` — видалити відгук (204 / 409)
 
 ## Тести
 
-`mvn test` запускає тести ArchUnit у кожному модулі і тест бізнес-правил CommentService. Перевіряється:
-
-- web не залежить від persistence
-- core не залежить від Servlet API і JDBC
-- сервлети лежать тільки у web
-- репозиторії лежать тільки у persistence
-- усі класи core мають публічні конструктори
+`mvn test`:
+- ArchUnit у кожному модулі (core не залежить від Spring, Servlet API і JDBC; web не залежить від persistence; класи `@Configuration` лежать у пакеті config)
+- `ApplicationContextTest` (`@SpringBootTest`) — піднімає контекст і перевіряє, що всі біни створені, зв'язані між собою і отримали параметри з application.yaml

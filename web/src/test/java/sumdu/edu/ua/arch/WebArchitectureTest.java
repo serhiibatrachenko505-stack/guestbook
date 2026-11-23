@@ -69,11 +69,20 @@ class WebArchitectureTest {
     }
 
     @Test
-    void coreShouldNotDependOnServletOrJdbc() {
+    void coreShouldNotDependOnServletJdbcOrSpring() {
         noClasses()
                 .that().resideInAPackage("sumdu.edu.ua.core..")
                 .should().dependOnClassesThat()
-                .resideInAnyPackage("jakarta.servlet..", "java.sql..", "javax.sql..")
+                .resideInAnyPackage("jakarta.servlet..", "java.sql..", "javax.sql..", "org.springframework..")
+                .because("core — чиста бізнес-логіка; біни з неї створюються у web через @Bean")
+                .check(classes);
+    }
+
+    @Test
+    void configurationClassesShouldResideInConfig() {
+        classes()
+                .that().areAnnotatedWith(org.springframework.context.annotation.Configuration.class)
+                .should().resideInAPackage("sumdu.edu.ua.config..")
                 .check(classes);
     }
 }

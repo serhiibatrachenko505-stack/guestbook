@@ -6,7 +6,8 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<h1>Каталог книг</h1>
+<h1 id="title">Каталог книг</h1>
+<p id="appinfo" style="color:#777"></p>
 
 <form id="search" class="row">
   <input name="q" placeholder="Пошук за назвою або автором">
@@ -86,6 +87,14 @@
     });
     if (r.ok) { e.target.reset(); page = 0; load(); }
     else { const err = await r.json(); errorBox.textContent = err.status + ': ' + err.message; }
+  });
+
+  // назва і версія — з application.yaml через GET /info
+  fetch('info').then(r => r.json()).then(i => {
+    document.getElementById('title').textContent = i.title;
+    document.title = i.title;
+    document.getElementById('appinfo').textContent =
+      `${i.application} v${i.version} · книг у каталозі: ${i.booksTotal} · видалення відгуку: ${i.deleteWindowHours} год`;
   });
 
   load();

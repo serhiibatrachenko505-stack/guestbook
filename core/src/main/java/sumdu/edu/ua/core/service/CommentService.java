@@ -11,7 +11,7 @@ import sumdu.edu.ua.core.exception.NotFoundException;
 import sumdu.edu.ua.core.port.CatalogRepositoryPort;
 import sumdu.edu.ua.core.port.CommentRepositoryPort;
 
-/** Бізнес-логіка відгуків: валідація і правило видалення протягом 24 годин. */
+/** Бізнес-логіка відгуків: валідація і правило видалення протягом 24 годин (за замовчуванням). */
 public class CommentService {
     public static final int MAX_AUTHOR = 64;
     public static final int MAX_TEXT = 1000;
@@ -21,11 +21,18 @@ public class CommentService {
     private final CommentRepositoryPort comments;
     private final CatalogRepositoryPort books;
     private final Clock clock;
+    private final Duration deleteWindow;
 
-    public CommentService(CommentRepositoryPort comments, CatalogRepositoryPort books, Clock clock) {
+    public CommentService(CommentRepositoryPort comments, CatalogRepositoryPort books,
+                          Clock clock, Duration deleteWindow) {
         this.comments = comments;
         this.books = books;
         this.clock = clock;
+        this.deleteWindow = deleteWindow;
+    }
+
+    public CommentService(CommentRepositoryPort comments, CatalogRepositoryPort books, Clock clock) {
+        this(comments, books, clock, DELETE_WINDOW);
     }
 
     public CommentService(CommentRepositoryPort comments, CatalogRepositoryPort books) {
@@ -47,7 +54,7 @@ public class CommentService {
     }
 
     /**
-     * Видаляє відгук, якщо з моменту створення минуло не більше 24 годин.
+     * Видаляє відгук, якщо з моменту створення минуло не більше deleteWindow (типово 24 години).
      * @return видалений відгук (для логування)
      */
     public Comment delete(long bookId, long commentId) {
@@ -56,13 +63,17 @@ public class CommentService {
                         "Comment " + commentId + " for book " + bookId + " not found"));
 
         Duration age = Duration.between(comment.getCreatedAt(), Instant.now(clock));
-        if (age.compareTo(DELETE_WINDOW) > 0) {
-            throw new ConflictException(
-                    "Comment can be deleted only within 24 hours after creation");
+        if (age.compareTo(deleteWindow) > 0) {
+            throw new ConflictException("Comment can be deleted only within "
+                    + deleteWindow.toHours() + " hours after creation");
         }
 
         comments.delete(bookId, commentId);
         return comment;
+    }
+
+    public Duration getDeleteWindow() {
+        return deleteWindow;
     }
 
     private void requireBook(long bookId) {

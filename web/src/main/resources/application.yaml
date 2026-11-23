@@ -1,0 +1,27 @@
+# ---------- стандартні параметри Spring Boot ----------
+spring:
+  application:
+    name: library-app
+  main:
+    banner-mode: console
+
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      force: true
+
+logging:
+  level:
+    root: INFO
+    sumdu.edu.ua: INFO
+
+# ---------- власні параметри застосунку (LibraryProperties) ----------
+library:
+  title: "Каталог книг"
+  version: "4.0"
+  books:
+    default-page-size: 10
+  comments:
+    delete-window-hours: 24
