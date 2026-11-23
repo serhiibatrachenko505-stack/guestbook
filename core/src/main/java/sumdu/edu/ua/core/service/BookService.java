@@ -32,6 +32,7 @@ public class BookService {
     }
 
     public Book get(long id) {
+        PageRules.checkId(id, "id");
         return books.findById(id)
                 .orElseThrow(() -> new NotFoundException("Book " + id + " not found"));
     }

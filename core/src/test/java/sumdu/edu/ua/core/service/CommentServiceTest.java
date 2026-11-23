@@ -74,6 +74,12 @@ class CommentServiceTest {
         assertThrows(NotFoundException.class, () -> service.add(999, "Ann", "text"));
     }
 
+    @Test
+    void nonPositiveIdsAreRejected() {
+        assertThrows(ValidationException.class, () -> service.add(0, "Ann", "text"));
+        assertThrows(ValidationException.class, () -> service.delete(1, -5));
+    }
+
     // ---- in-memory підміни портів ----
 
     static class FakeBooks implements CatalogRepositoryPort {

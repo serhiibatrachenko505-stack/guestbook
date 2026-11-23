@@ -58,6 +58,8 @@ public class CommentService {
      * @return видалений відгук (для логування)
      */
     public Comment delete(long bookId, long commentId) {
+        PageRules.checkId(bookId, "bookId");
+        PageRules.checkId(commentId, "commentId");
         Comment comment = comments.findById(bookId, commentId)
                 .orElseThrow(() -> new NotFoundException(
                         "Comment " + commentId + " for book " + bookId + " not found"));
@@ -77,6 +79,7 @@ public class CommentService {
     }
 
     private void requireBook(long bookId) {
+        PageRules.checkId(bookId, "bookId");
         if (books.findById(bookId).isEmpty()) {
             throw new NotFoundException("Book " + bookId + " not found");
         }

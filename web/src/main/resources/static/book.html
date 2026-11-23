@@ -55,16 +55,18 @@
   }
 
   async function remove(commentId) {
-    const r = await fetch(`books/${id}/comments/${commentId}`, { method: 'DELETE' });
+    const r = await fetch(`comments/${commentId}?bookId=${id}`, { method: 'DELETE' });
     if (r.ok) { errorBox.textContent = ''; load(); } else showError(r);
   }
 
   document.getElementById('add').addEventListener('submit', async e => {
     e.preventDefault();
-    const r = await fetch(`books/${id}/comments`, {
+    const body = Object.fromEntries(new FormData(e.target));
+    body.bookId = Number(id);
+    const r = await fetch('comments', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(Object.fromEntries(new FormData(e.target)))
+      body: JSON.stringify(body)
     });
     if (r.ok) { e.target.reset(); errorBox.textContent = ''; load(); } else showError(r);
   });

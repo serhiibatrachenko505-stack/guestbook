@@ -6,10 +6,12 @@ import static com.tngtech.archunit.lang.syntax.ArchRuleDefinition.noClasses;
 import com.tngtech.archunit.core.domain.JavaClasses;
 import com.tngtech.archunit.core.importer.ClassFileImporter;
 import com.tngtech.archunit.core.importer.ImportOption;
-import jakarta.servlet.Filter;
 import jakarta.servlet.http.HttpServlet;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 /** Архітектурні правила модуля web (імпортуються класи всіх трьох модулів). */
 class WebArchitectureTest {
@@ -29,7 +31,7 @@ class WebArchitectureTest {
                 .that().resideInAPackage("sumdu.edu.ua.web..")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage("sumdu.edu.ua.persistence..", "java.sql..", "org.h2..")
-                .because("web працює лише з сервісами та портами core")
+                .because("контролери працюють лише з сервісами core")
                 .check(classes);
     }
 
@@ -43,19 +45,36 @@ class WebArchitectureTest {
     }
 
     @Test
-    void servletsShouldResideOnlyInWeb() {
+    void restControllersShouldResideInWebController() {
         classes()
-                .that().areAssignableTo(HttpServlet.class)
-                .or().haveSimpleNameEndingWith("Servlet")
-                .should().resideInAPackage("sumdu.edu.ua.web..")
+                .that().areAnnotatedWith(RestController.class)
+                .should().resideInAPackage("sumdu.edu.ua.web.controller..")
+                .andShould().haveSimpleNameEndingWith("Controller")
                 .check(classes);
     }
 
     @Test
-    void filtersShouldResideInWebError() {
+    void noServletsAnymore() {
+        noClasses()
+                .that().resideInAPackage("sumdu.edu.ua..")
+                .should().beAssignableTo(HttpServlet.class)
+                .because("у Spring MVC запити обробляють контролери, а не сервлети")
+                .check(classes);
+    }
+
+    @Test
+    void exceptionHandlersShouldResideInWebError() {
         classes()
-                .that().implement(Filter.class)
+                .that().areAnnotatedWith(RestControllerAdvice.class)
                 .should().resideInAPackage("sumdu.edu.ua.web.error..")
+                .check(classes);
+    }
+
+    @Test
+    void configurationClassesShouldResideInConfig() {
+        classes()
+                .that().areAnnotatedWith(Configuration.class)
+                .should().resideInAPackage("sumdu.edu.ua.config..")
                 .check(classes);
     }
 
@@ -74,15 +93,6 @@ class WebArchitectureTest {
                 .that().resideInAPackage("sumdu.edu.ua.core..")
                 .should().dependOnClassesThat()
                 .resideInAnyPackage("jakarta.servlet..", "java.sql..", "javax.sql..", "org.springframework..")
-                .because("core — чиста бізнес-логіка; біни з неї створюються у web через @Bean")
-                .check(classes);
-    }
-
-    @Test
-    void configurationClassesShouldResideInConfig() {
-        classes()
-                .that().areAnnotatedWith(org.springframework.context.annotation.Configuration.class)
-                .should().resideInAPackage("sumdu.edu.ua.config..")
                 .check(classes);
     }
 }
