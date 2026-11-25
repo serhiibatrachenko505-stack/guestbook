@@ -18,6 +18,27 @@ spring:
     encoding: UTF-8
     cache: false          # шаблони перечитуються без перезапуску (зручно під час розробки)
 
+  # ===== Gmail SMTP (ЛР7) =====
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: serhiibatrachenko505@gmail.com
+    password: ${MAIL_APP_PASSWORD}
+    default-encoding: UTF-8
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+          ssl:
+            trust: smtp.gmail.com
+
+  # ===== FreeMarker (ЛР7): лише для листів, сторінки лишаються на Thymeleaf =====
+  freemarker:
+    enabled: false
+    charset: UTF-8
+
 server:
   port: 8080
   servlet:
@@ -38,3 +59,8 @@ library:
     default-page-size: 10
   comments:
     delete-window-hours: 24
+
+# ---------- адреса отримувача листів (ЛР7) ----------
+app:
+  mail:
+    admin: serhiibatrachenko505@gmail.com

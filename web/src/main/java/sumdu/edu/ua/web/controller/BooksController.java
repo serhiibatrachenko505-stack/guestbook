@@ -20,13 +20,14 @@ import sumdu.edu.ua.core.service.BookService;
 import sumdu.edu.ua.web.SortParam;
 import sumdu.edu.ua.web.dto.BookForm;
 import sumdu.edu.ua.web.dto.CommentForm;
+import sumdu.edu.ua.web.service.MailService; // LR7
 
 /**
  * MVC-контролер сторінок каталогу. Методи повертають ІМ'Я шаблону (View),
  * а дані передають у шаблон через Model.
  *   GET  /books           -> templates/books.html
  *   GET  /books/add       -> templates/book-form.html
- *   POST /books/add       -> збереження, redirect:/books
+ *   POST /books/add       -> збереження, лист адміністратору, redirect:/books
  *   GET  /books/{id}      -> templates/book.html (книга + відгуки)
  */
 @Controller
@@ -37,11 +38,14 @@ public class BooksController {
     private final BookService books;
     private final BookPageModel bookPage;
     private final int defaultPageSize;
+    private final MailService mailService; // LR7
 
-    public BooksController(BookService books, BookPageModel bookPage, LibraryProperties props) {
+    public BooksController(BookService books, BookPageModel bookPage, LibraryProperties props,
+                           MailService mailService) { // LR7
         this.books = books;
         this.bookPage = bookPage;
         this.defaultPageSize = props.books().defaultPageSize();
+        this.mailService = mailService; // LR7
     }
 
     @GetMapping
@@ -68,14 +72,22 @@ public class BooksController {
                           BindingResult binding,
                           RedirectAttributes redirect) {
         if (binding.hasErrors()) {
-            return "book-form";                 // та сама форма з помилками під полями
+            return "book-form";
         }
         try {
             Book saved = books.add(form.getTitle(), form.getAuthor(), form.getPubYear());
             log.info("Book created: id={}, title='{}'", saved.getId(), saved.getTitle());
+
+            // LR7: notify admin by e-mail; the book is already saved, so a mail error must not break the page
+            try {
+                mailService.sendNewBookEmail(saved);
+            } catch (RuntimeException e) {
+                log.warn("Book saved, but email was not sent: {}", e.getMessage());
+            }
+
             redirect.addFlashAttribute("message", "msg.bookAdded");
             return "redirect:/books";
-        } catch (ValidationException e) {      // правила з core, яких не покриває валідація форми
+        } catch (ValidationException e) {
             binding.reject("error.validation", new Object[]{e.getMessage()}, e.getMessage());
             return "book-form";
         }
