@@ -5,6 +5,19 @@ spring:
   main:
     banner-mode: console
 
+  # файли локалізації: messages.properties (uk), messages_en.properties (en)
+  messages:
+    basename: messages
+    encoding: UTF-8
+    fallback-to-system-locale: false   # невідома мова -> messages.properties (українська)
+
+  thymeleaf:
+    prefix: classpath:/templates/
+    suffix: .html
+    mode: HTML
+    encoding: UTF-8
+    cache: false          # шаблони перечитуються без перезапуску (зручно під час розробки)
+
 server:
   port: 8080
   servlet:
@@ -20,7 +33,7 @@ logging:
 # ---------- власні параметри застосунку (LibraryProperties) ----------
 library:
   title: "Каталог книг"
-  version: "4.0"
+  version: "6.0"
   books:
     default-page-size: 10
   comments:

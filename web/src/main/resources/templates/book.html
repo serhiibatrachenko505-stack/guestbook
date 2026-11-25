@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head th:replace="~{fragments/header :: head(${book.title})}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<p><a th:href="@{/books}" th:text="#{label.back}">← До каталогу</a></p>
+
+<h1 th:text="${book.title}">Кобзар</h1>
+<p class="meta">
+    <span th:text="${book.author}">Тарас Шевченко</span>,
+    <span th:text="${book.pubYear}">1840</span>
+</p>
+
+<p class="msg"   th:if="${message}" th:text="#{__${message}__}">Відгук додано</p>
+<p class="error" th:if="${error}"   th:text="#{__${error}__(${deleteWindowHours})}">Не можна видалити</p>
+
+<h2 th:text="#{title.comments}">Відгуки</h2>
+
+<p class="empty" th:if="${#lists.isEmpty(comments)}" th:text="#{label.noComments}">Ще немає відгуків</p>
+
+<ul class="comments" th:unless="${#lists.isEmpty(comments)}">
+    <li th:each="c : ${comments}">
+        <b th:text="${c.author}">Олена</b>:
+        <span th:text="${c.text}">Класика</span>
+        <small th:text="${@dates.format(c.createdAt)}">20.11.2026 10:00</small>
+        <form th:action="@{/comments/delete}" method="post" class="inline">
+            <input type="hidden" name="bookId" th:value="${book.id}">
+            <input type="hidden" name="commentId" th:value="${c.id}">
+            <button type="submit" th:text="#{button.delete}">Видалити</button>
+        </form>
+    </li>
+</ul>
+
+<h3 th:text="#{title.addComment}">Додати відгук</h3>
+
+<form th:action="@{/comments}" th:object="${commentForm}" method="post" class="form">
+    <input type="hidden" name="bookId" th:value="${book.id}">
+
+    <label>
+        <span th:text="#{label.yourName}">Ваше ім’я</span>
+        <input type="text" th:field="*{author}" th:errorclass="invalid" maxlength="64">
+    </label>
+    <span class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">Обов’язкове поле</span>
+
+    <label>
+        <span th:text="#{label.comment}">Відгук</span>
+        <textarea th:field="*{text}" th:errorclass="invalid" rows="3" maxlength="1000"></textarea>
+    </label>
+    <span class="error" th:if="${#fields.hasErrors('text')}" th:errors="*{text}">Обов’язкове поле</span>
+
+    <button type="submit" th:text="#{button.add}">Додати</button>
+</form>
+
+<footer th:replace="~{fragments/header :: footer}"></footer>
+</body>
+</html>

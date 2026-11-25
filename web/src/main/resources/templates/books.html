@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head th:replace="~{fragments/header :: head(#{title.books})}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<h1 th:text="#{title.books}">Каталог книг</h1>
+
+<!-- повідомлення після redirect (flash-атрибут) -->
+<p class="msg" th:if="${message}" th:text="#{__${message}__}">Книгу додано</p>
+
+<!-- пошук і сортування -->
+<form th:action="@{/books}" method="get" class="row">
+    <input name="q" th:value="${q}" th:placeholder="#{label.search}" placeholder="Пошук">
+    <select name="sort">
+        <option value="id,desc"     th:selected="${sort == 'id,desc'}"     th:text="#{sort.newest}">Нові</option>
+        <option value="title,asc"   th:selected="${sort == 'title,asc'}"   th:text="#{sort.title}">Назва</option>
+        <option value="author,asc"  th:selected="${sort == 'author,asc'}"  th:text="#{sort.author}">Автор</option>
+        <option value="year,desc"   th:selected="${sort == 'year,desc'}"   th:text="#{sort.yearDesc}">Рік ↓</option>
+        <option value="year,asc"    th:selected="${sort == 'year,asc'}"    th:text="#{sort.yearAsc}">Рік ↑</option>
+    </select>
+    <button th:text="#{button.search}">Знайти</button>
+</form>
+
+<!-- умовний елемент: порожня колекція -->
+<p class="empty" th:if="${#lists.isEmpty(books)}" th:text="#{label.noBooks}">Немає книг</p>
+
+<!-- список книг: th:each по колекції з Model -->
+<table th:unless="${#lists.isEmpty(books)}">
+    <thead>
+    <tr>
+        <th>#</th>
+        <th th:text="#{label.title}">Назва</th>
+        <th th:text="#{label.author}">Автор</th>
+        <th th:text="#{label.year}">Рік</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="book : ${books}">
+        <td th:text="${book.id}">1</td>
+        <td><a th:href="@{/books/{id}(id=${book.id})}" th:text="${book.title}">Кобзар</a></td>
+        <td th:text="${book.author}">Тарас Шевченко</td>
+        <td th:text="${book.pubYear}">1840</td>
+    </tr>
+    </tbody>
+</table>
+
+<!-- пагінація -->
+<div class="row" th:if="${page.totalPages > 1}">
+    <a th:if="${page.page > 0}"
+       th:href="@{/books(q=${q}, sort=${sort}, page=${page.page - 1})}" th:text="#{page.prev}">← Назад</a>
+    <span th:text="#{page.info(${page.page + 1}, ${page.totalPages}, ${page.total})}">Сторінка 1 з 2</span>
+    <a th:if="${page.page + 1 < page.totalPages}"
+       th:href="@{/books(q=${q}, sort=${sort}, page=${page.page + 1})}" th:text="#{page.next}">Далі →</a>
+</div>
+
+<p><a class="button" th:href="@{/books/add}" th:text="#{label.addBook}">Додати книгу</a></p>
+
+<footer th:replace="~{fragments/header :: footer}"></footer>
+</body>
+</html>

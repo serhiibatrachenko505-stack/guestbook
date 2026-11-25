@@ -1,20 +1,31 @@
-### Список книг (JSON)
+### ===== HTML-сторінки (Thymeleaf) — відкривати в браузері =====
+# http://localhost:8080/books
+# http://localhost:8080/books?lang=en
+# http://localhost:8080/books/add
+# http://localhost:8080/books/1
+
+### Сторінка англійською через заголовок Accept-Language
 GET http://localhost:8080/books
+Accept-Language: en-US
+
+### ===== REST API (JSON) =====
+### Список книг (JSON)
+GET http://localhost:8080/api/books
 
 ### Пошук, сортування, пагінація
-GET http://localhost:8080/books?q=martin&sort=year,desc&size=5
+GET http://localhost:8080/api/books?q=martin&sort=year,desc&size=5
 
 ### Книга з відгуками
-GET http://localhost:8080/books/1
+GET http://localhost:8080/api/books/1
 
 ### 404 — книги не існує
-GET http://localhost:8080/books/999
+GET http://localhost:8080/api/books/999
 
 ### 400 — id не число
-GET http://localhost:8080/books/abc
+GET http://localhost:8080/api/books/abc
 
 ### Додати книгу -> 201
-POST http://localhost:8080/books
+POST http://localhost:8080/api/books
 Content-Type: application/json
 
 {
@@ -24,10 +35,10 @@ Content-Type: application/json
 }
 
 ### Відгуки до книги
-GET http://localhost:8080/comments?bookId=1
+GET http://localhost:8080/api/comments?bookId=1
 
 ### Додати відгук -> 201
-POST http://localhost:8080/comments
+POST http://localhost:8080/api/comments
 Content-Type: application/json
 
 {
@@ -37,7 +48,7 @@ Content-Type: application/json
 }
 
 ### 400 — порожній автор
-POST http://localhost:8080/comments
+POST http://localhost:8080/api/comments
 Content-Type: application/json
 
 {
@@ -47,13 +58,13 @@ Content-Type: application/json
 }
 
 ### Видалити свіжий відгук -> 204 (id візьміть з відповіді POST)
-DELETE http://localhost:8080/comments/3?bookId=1
+DELETE http://localhost:8080/api/comments/3?bookId=1
 
 ### 409 — відгуку більше 24 годин
-DELETE http://localhost:8080/comments/2?bookId=1
+DELETE http://localhost:8080/api/comments/2?bookId=1
 
 ### 405 — метод не підтримується
-PUT http://localhost:8080/books
+PUT http://localhost:8080/api/books
 
 ### Інформація про застосунок
-GET http://localhost:8080/info
+GET http://localhost:8080/api/info

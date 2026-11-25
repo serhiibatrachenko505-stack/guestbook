@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<!--
+  Спільні фрагменти сторінок. Підключення:
+    <head   th:replace="~{fragments/header :: head(#{title.books})}"></head>
+    <header th:replace="~{fragments/header :: header}"></header>
+    <footer th:replace="~{fragments/header :: footer}"></footer>
+-->
+
+<!-- <head> з параметром: заголовок вкладки браузера -->
+<head th:fragment="head(title)">
+    <meta charset="UTF-8">
+    <title th:text="${title} + ' · ' + #{app.name}">Сторінка · MPF</title>
+    <link rel="stylesheet" th:href="@{/style.css}">
+</head>
+
+<body>
+
+<!-- Шапка з навігацією та перемикачем мови -->
+<header th:fragment="header" class="site-header">
+    <nav class="row">
+        <a th:href="@{/books}" th:text="#{nav.books}">Книги</a>
+        <a th:href="@{/books/add}" th:text="#{nav.addBook}">Додати книгу</a>
+        <a th:href="@{/api/books}" th:text="#{nav.api}">REST API</a>
+        <span class="spacer"></span>
+        <span th:text="#{nav.language}">Мова</span>:
+        <a href="?lang=uk" th:classappend="${#locale.language == 'uk'} ? 'active'">UA</a>
+        <a href="?lang=en" th:classappend="${#locale.language == 'en'} ? 'active'">EN</a>
+    </nav>
+</header>
+
+<!-- Підвал -->
+<footer th:fragment="footer" class="site-footer">
+    <small th:text="#{footer.text}">MPF Labs · Spring MVC + Thymeleaf</small>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<!--
+  Сторінка помилки. Використовується:
+   - ViewExceptionHandler (книгу не знайдено, некоректний id) — атрибути titleKey, details;
+   - Spring Boot для невідомих адрес (/error) — атрибути status, error, path.
+-->
+<head th:replace="~{fragments/header :: head(#{title.error})}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<h1>
+    <span th:text="${status}">404</span> ·
+    <span th:if="${titleKey}" th:text="#{__${titleKey}__}">Не знайдено</span>
+    <span th:unless="${titleKey}" th:text="#{error.generic}">Помилка</span>
+</h1>
+
+<p th:if="${details}" class="meta" th:text="${details}">Book 999 not found</p>
+<p th:if="${path}" class="meta" th:text="${path}">/unknown</p>
+
+<p><a th:href="@{/books}" th:text="#{label.back}">← До каталогу</a></p>
+
+<footer th:replace="~{fragments/header :: footer}"></footer>
+</body>
+</html>

@@ -18,11 +18,12 @@ import sumdu.edu.ua.core.exception.NotFoundException;
 import sumdu.edu.ua.core.exception.ValidationException;
 
 /**
- * Централізована обробка помилок для всіх контролерів.
+ * Централізована обробка помилок REST API (пакет web.api) — відповідь у JSON.
+ * Помилки HTML-сторінок обробляє ViewExceptionHandler.
  * Доменні винятки з core і помилки Spring MVC -> HTTP-статус + JSON у форматі ErrorBody.
  * WARN для 4xx, ERROR для 5xx.
  */
-@RestControllerAdvice
+@RestControllerAdvice(basePackages = "sumdu.edu.ua.web.api")
 public class GlobalExceptionHandler {
     private static final Logger log = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 

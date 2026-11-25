@@ -10,6 +10,8 @@ import jakarta.servlet.http.HttpServlet;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Controller;
+import org.springframework.web.bind.annotation.ControllerAdvice;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
@@ -45,9 +47,18 @@ class WebArchitectureTest {
     }
 
     @Test
-    void restControllersShouldResideInWebController() {
+    void restControllersShouldResideInWebApi() {
         classes()
                 .that().areAnnotatedWith(RestController.class)
+                .should().resideInAPackage("sumdu.edu.ua.web.api..")
+                .because("JSON-контролери відокремлені від контролерів сторінок")
+                .check(classes);
+    }
+
+    @Test
+    void viewControllersShouldResideInWebController() {
+        classes()
+                .that().areAnnotatedWith(Controller.class)
                 .should().resideInAPackage("sumdu.edu.ua.web.controller..")
                 .andShould().haveSimpleNameEndingWith("Controller")
                 .check(classes);
@@ -66,6 +77,7 @@ class WebArchitectureTest {
     void exceptionHandlersShouldResideInWebError() {
         classes()
                 .that().areAnnotatedWith(RestControllerAdvice.class)
+                .or().areAnnotatedWith(ControllerAdvice.class)
                 .should().resideInAPackage("sumdu.edu.ua.web.error..")
                 .check(classes);
     }

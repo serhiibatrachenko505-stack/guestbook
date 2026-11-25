@@ -1,14 +1,13 @@
-# Лабораторна робота 5. Spring MVC
+# Лабораторна робота 6. Thymeleaf
 
-Каталог книг з відгуками на Spring MVC. Основа — лабораторна 4 (Spring Boot). Сервлети замінено на контролери `@RestController`, маршрутизацію виконує DispatcherServlet, відповіді повертаються у форматі JSON. Модульна структура core / persistence / web збережена.
+Каталог книг з відгуками з серверним рендерингом сторінок через Thymeleaf. Основа — лабораторна 5 (Spring MVC). Контролери сторінок повертають імена шаблонів і передають дані через `Model`; REST API з лабораторної 5 залишився за адресою `/api/...`. Модулі core і persistence не змінювались.
 
 ## Версії
 
 - JDK 17
 - Maven 3.8.4
-- Spring Boot 3.3.4 (Spring MVC 6.1, вбудований Tomcat 10.1)
+- Spring Boot 3.3.4 (Spring MVC 6.1, Thymeleaf 3.1)
 - H2 2.2.224
-- ArchUnit 1.3.0, JUnit 5
 
 ## Як запустити
 
@@ -17,46 +16,38 @@ mvn clean install
 mvn -pl web spring-boot:run
 ```
 
-Або кнопкою Run у класі `AppInit` в IntelliJ. Після запуску відкрити http://localhost:8080/
+Відкрити http://localhost:8080/books
 
-## Структура web
+## Сторінки
 
-- `config/WebConfig` — конфігурація Spring MVC з `@EnableWebMvc` (JSON, перехоплювач запитів, статичні сторінки)
-- `config/AppConfig` — біни сервісів core (`@Bean`)
-- `web/controller/BooksController`, `CommentsController`, `InfoController` — REST-контролери
-- `web/dto` — об'єкти запитів і відповідей (`BookRequest`, `CommentRequest`, `BookDetails`)
-- `web/error/GlobalExceptionHandler` — обробка помилок (`@RestControllerAdvice`)
-- `web/RequestLoggingInterceptor` — логування: який метод контролера обробляє запит
+| URL | Шаблон | Що робить |
+|---|---|---|
+| `GET /books` | `books.html` | список книг (`th:each`), пошук, сортування, сторінки, «Немає книг» (`th:if`/`th:unless`) |
+| `GET /books/add` | `book-form.html` | форма додавання книги (`th:object`, `th:field`, `th:errors`) |
+| `POST /books/add` | — | збереження, `redirect:/books` |
+| `GET /books/{id}` | `book.html` | книга, відгуки, форма відгуку, кнопки видалення |
+| `POST /comments` | — | додати відгук |
+| `POST /comments/delete` | — | видалити відгук (лише протягом 24 год) |
+| помилки | `error.html` | 404 / 400 / невідомі адреси |
 
-## Ендпоїнти
+Спільні частини (`<head>`, шапка з навігацією і перемикачем мови, підвал) — у `templates/fragments/header.html`, підключаються через `th:replace="~{fragments/header :: header}"`.
 
-| Метод | URL | Опис | Відповідь |
-|---|---|---|---|
-| GET | `/books?q=&page=&size=&sort=` | список книг | 200 |
-| GET | `/books/{id}` | книга з відгуками | 200 / 400 / 404 |
-| POST | `/books` | додати книгу (JSON: title, author, pubYear) | 201 / 400 |
-| GET | `/comments?bookId=` | відгуки до книги | 200 / 404 |
-| POST | `/comments` | додати відгук (JSON: bookId, author, text) | 201 / 400 / 404 |
-| DELETE | `/comments/{id}?bookId=` | видалити відгук | 204 / 404 / 409 |
-| GET | `/info` | інформація про застосунок | 200 |
+## Локалізація
 
-Ті самі контролери доступні також за `/api/books` і `/api/comments`.
+- `messages.properties` — українська (за замовчуванням)
+- `messages_en.properties` — англійська
 
-Готові запити — у файлі `requests.http` (IntelliJ HTTP Client / VS Code REST Client) або в Postman.
+Мова визначається так: параметр `?lang=en` / `?lang=uk` (запам'ятовується в cookie) → мова браузера (`Accept-Language`) → українська.
 
-## Помилки
+Файли `messages*.properties` збережені в UTF-8. Якщо редагуєте їх в IntelliJ, увімкніть Settings → Editor → File Encodings → Default encoding for properties files: UTF-8.
 
-Усі помилки повертаються у форматі:
+## REST API
 
-```
-{"timestamp":"...","status":404,"error":"Not Found","message":"Book 999 not found","path":"/books/999"}
-```
-
-400 — неправильні дані, 404 — не знайдено, 405 — метод не підтримується, 409 — відгук старший за 24 години, 500 — внутрішня помилка.
+`GET /api/books`, `GET /api/books/{id}`, `POST /api/books`, `GET /api/comments?bookId=`, `POST /api/comments`, `DELETE /api/comments/{id}?bookId=`, `GET /api/info`. Приклади — у `requests.http`.
 
 ## Тести
 
-`mvn test`:
-- `ControllersMvcTest` — запити через MockMvc (GET /books, GET /books/1, POST /comments, 400, 404, 409)
-- `ApplicationContextTest` — DispatcherServlet зареєстровано, контролери і сервіси створені
-- ArchUnit — контролери лежать у web.controller, сервлетів немає, web не залежить від persistence, core не залежить від Spring
+- `PagesMvcTest` — шаблони, Model, форма (успішна і з помилками), «Немає книг», перемикання мови через `?lang` і `Accept-Language`
+- `ApiMvcTest` — REST API
+- `ApplicationContextTest` — DispatcherServlet, ThymeleafViewResolver, CookieLocaleResolver, переклади
+- ArchUnit — архітектурні правила

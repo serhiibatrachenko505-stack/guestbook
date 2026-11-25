@@ -1,69 +1,89 @@
 package sumdu.edu.ua.web.controller;
 
-import java.net.URI;
+import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
+import org.springframework.stereotype.Controller;
+import org.springframework.ui.Model;
+import org.springframework.validation.BindingResult;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 import sumdu.edu.ua.config.LibraryProperties;
 import sumdu.edu.ua.core.domain.Book;
-import sumdu.edu.ua.core.domain.Page;
-import sumdu.edu.ua.core.domain.PageRequest;
+import sumdu.edu.ua.core.exception.ValidationException;
 import sumdu.edu.ua.core.service.BookService;
-import sumdu.edu.ua.core.service.CommentService;
-import sumdu.edu.ua.web.dto.BookDetails;
-import sumdu.edu.ua.web.dto.BookRequest;
+import sumdu.edu.ua.web.SortParam;
+import sumdu.edu.ua.web.dto.BookForm;
+import sumdu.edu.ua.web.dto.CommentForm;
 
 /**
- * Каталог книг. Замінює BooksServlet / BooksApiServlet.
- * Доступний за /books і /api/books.
+ * MVC-контролер сторінок каталогу. Методи повертають ІМ'Я шаблону (View),
+ * а дані передають у шаблон через Model.
+ *   GET  /books           -> templates/books.html
+ *   GET  /books/add       -> templates/book-form.html
+ *   POST /books/add       -> збереження, redirect:/books
+ *   GET  /books/{id}      -> templates/book.html (книга + відгуки)
  */
-@RestController
-@RequestMapping({"/books", "/api/books"})
+@Controller
+@RequestMapping("/books")
 public class BooksController {
     private static final Logger log = LoggerFactory.getLogger(BooksController.class);
 
     private final BookService books;
-    private final CommentService comments;
+    private final BookPageModel bookPage;
     private final int defaultPageSize;
 
-    public BooksController(BookService books, CommentService comments, LibraryProperties props) {
+    public BooksController(BookService books, BookPageModel bookPage, LibraryProperties props) {
         this.books = books;
-        this.comments = comments;
+        this.bookPage = bookPage;
         this.defaultPageSize = props.books().defaultPageSize();
     }
 
-    /** GET /books?q=&page=&size=&sort= — список книг. */
     @GetMapping
-    public ResponseEntity<Page<Book>> getBooks(
-            @RequestParam(name = "q", required = false) String q,
-            @RequestParam(name = "page", defaultValue = "0") int page,
-            @RequestParam(name = "size", required = false) Integer size,
-            @RequestParam(name = "sort", required = false) String sort) {
-        int pageSize = size != null ? size : defaultPageSize;
-        PageRequest request = SortParam.toPageRequest(page, pageSize, sort);
-        return ResponseEntity.ok(books.search(q, request));
+    public String list(@RequestParam(name = "q", required = false) String q,
+                       @RequestParam(name = "page", defaultValue = "0") int page,
+                       @RequestParam(name = "sort", defaultValue = "id,desc") String sort,
+                       Model model) {
+        var result = books.search(q, SortParam.toPageRequest(page, defaultPageSize, sort));
+        model.addAttribute("books", result.getItems());
+        model.addAttribute("page", result);
+        model.addAttribute("q", q == null ? "" : q);
+        model.addAttribute("sort", sort);
+        return "books";
     }
 
-    /** GET /books/{id} — книга з відгуками. */
+    @GetMapping({"/add", "/new"})
+    public String showAddForm(Model model) {
+        model.addAttribute("bookForm", new BookForm());
+        return "book-form";
+    }
+
+    @PostMapping({"/add", "/new"})
+    public String addBook(@Valid @ModelAttribute("bookForm") BookForm form,
+                          BindingResult binding,
+                          RedirectAttributes redirect) {
+        if (binding.hasErrors()) {
+            return "book-form";                 // та сама форма з помилками під полями
+        }
+        try {
+            Book saved = books.add(form.getTitle(), form.getAuthor(), form.getPubYear());
+            log.info("Book created: id={}, title='{}'", saved.getId(), saved.getTitle());
+            redirect.addFlashAttribute("message", "msg.bookAdded");
+            return "redirect:/books";
+        } catch (ValidationException e) {      // правила з core, яких не покриває валідація форми
+            binding.reject("error.validation", new Object[]{e.getMessage()}, e.getMessage());
+            return "book-form";
+        }
+    }
+
     @GetMapping("/{id}")
-    public ResponseEntity<BookDetails> getBook(@PathVariable("id") long id) {
-        Book book = books.get(id);   // NotFoundException -> 404 (GlobalExceptionHandler)
-        var bookComments = comments.list(id, null, null, new PageRequest(0, 20));
-        return ResponseEntity.ok(new BookDetails(book, bookComments));
-    }
-
-    /** POST /books — додати книгу, 201 Created. */
-    @PostMapping
-    public ResponseEntity<Book> addBook(@RequestBody BookRequest req) {
-        Book saved = books.add(req.title(), req.author(), req.pubYear());
-        log.info("Book created: id={}, title='{}'", saved.getId(), saved.getTitle());
-        return ResponseEntity.created(URI.create("/books/" + saved.getId())).body(saved);
+    public String bookPage(@PathVariable("id") long id, Model model) {
+        bookPage.fill(model, id, new CommentForm());
+        return "book";
     }
 }

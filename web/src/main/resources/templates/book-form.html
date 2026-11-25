@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head th:replace="~{fragments/header :: head(#{title.addBook})}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<h1 th:text="#{title.addBook}">Додати книгу</h1>
+
+<!--
+  Form binding: th:object задає об'єкт форми з Model (bookForm),
+  th:field="*{title}" прив'язує поле до властивості: генерує name, id і value.
+  Після невдалої валідації поля заповнені введеними значеннями, а під ними — помилки.
+-->
+<form th:action="@{/books/add}" th:object="${bookForm}" method="post" class="form">
+
+    <div class="error" th:if="${#fields.hasGlobalErrors()}">
+        <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Помилка</p>
+    </div>
+
+    <label>
+        <span th:text="#{label.title}">Назва</span>
+        <input type="text" th:field="*{title}" th:errorclass="invalid" maxlength="255">
+    </label>
+    <span class="error" th:if="${#fields.hasErrors('title')}" th:errors="*{title}">Обов’язкове поле</span>
+
+    <label>
+        <span th:text="#{label.author}">Автор</span>
+        <input type="text" th:field="*{author}" th:errorclass="invalid" maxlength="255">
+    </label>
+    <span class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">Обов’язкове поле</span>
+
+    <label>
+        <span th:text="#{label.year}">Рік</span>
+        <input type="number" th:field="*{pubYear}" th:errorclass="invalid">
+    </label>
+    <span class="error" th:if="${#fields.hasErrors('pubYear')}" th:errors="*{pubYear}">Некоректний рік</span>
+
+    <div class="row">
+        <button type="submit" th:text="#{button.save}">Зберегти</button>
+        <a th:href="@{/books}" th:text="#{button.cancel}">Скасувати</a>
+    </div>
+</form>
+
+<footer th:replace="~{fragments/header :: footer}"></footer>
+</body>
+</html>

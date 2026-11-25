@@ -1,4 +1,4 @@
-package sumdu.edu.ua.web.controller;
+package sumdu.edu.ua.web.api;
 
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -7,7 +7,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RestController;
 import sumdu.edu.ua.web.service.LibraryInfoService;
 
-/** GET /info — інформація про застосунок (замість InfoServlet). */
+/** GET /api/info — інформація про застосунок (JSON). */
 @RestController
 public class InfoController {
 
@@ -20,7 +20,7 @@ public class InfoController {
         this.appName = appName;
     }
 
-    @GetMapping("/info")
+    @GetMapping("/api/info")
     public Map<String, Object> info() {   // @RestController => @ResponseBody => JSON
         Map<String, Object> body = new LinkedHashMap<>();
         body.put("application", appName);

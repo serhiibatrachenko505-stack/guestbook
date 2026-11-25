@@ -1,13 +1,13 @@
-package sumdu.edu.ua.web.controller;
+package sumdu.edu.ua.web;
 
 import sumdu.edu.ua.core.domain.PageRequest;
 import sumdu.edu.ua.core.exception.ValidationException;
 
 /** Перетворює page/size/sort з запиту на PageRequest. sort: "title" або "year,desc". */
-final class SortParam {
+public final class SortParam {
     private SortParam() {}
 
-    static PageRequest toPageRequest(int page, int size, String sort) {
+    public static PageRequest toPageRequest(int page, int size, String sort) {
         if (sort == null || sort.isBlank()) {
             return new PageRequest(page, size);
         }
