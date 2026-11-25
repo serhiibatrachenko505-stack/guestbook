@@ -1,4 +1,4 @@
-package sumdu.edu.ua.web.config;
+package sumdu.edu.ua.config;
 
 import freemarker.core.HTMLOutputFormat;
 import freemarker.template.Configuration;
