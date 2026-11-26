@@ -126,4 +126,22 @@ class WebArchitectureTest {
                 .because("core описує ролі через стандартну @RolesAllowed і порти PasswordHasher / NotificationPort")
                 .check(classes);
     }
+
+    @Test
+    void aspectsShouldResideInWebAop() {
+        classes()
+                .that().areAnnotatedWith(org.aspectj.lang.annotation.Aspect.class)
+                .should().resideInAPackage("sumdu.edu.ua.web.aop..")
+                .check(classes);
+    }
+
+    @Test
+    void coreShouldNotDependOnAspectJ() {
+        noClasses()
+                .that().resideInAPackage("sumdu.edu.ua.core..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("org.aspectj..")
+                .because("логування додається аспектами ззовні, бізнес-код про нього не знає")
+                .check(classes);
+    }
 }

@@ -77,6 +77,8 @@ class ApiMvcTest {
     void oldCommentCannotBeDeleted() throws Exception {
         // тестовий відгук #2 з data.sql створено 2 доби тому
         mvc.perform(delete("/api/comments/2").param("bookId", "1"))
-                .andExpect(status().isConflict());
+                .andExpect(status().isBadRequest())   // ЛР10: CommentTooOldException -> 400 {"error": "..."}
+                .andExpect(jsonPath("$.error").value(
+                        "Коментар створено більше ніж 24 години тому і не може бути видалений"));
     }
 }

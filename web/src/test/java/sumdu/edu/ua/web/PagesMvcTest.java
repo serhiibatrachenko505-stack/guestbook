@@ -142,6 +142,37 @@ class PagesMvcTest {
     }
 
     @Test
+    @WithMockUser(username = "Student", roles = "USER")
+    void forbiddenWordsShowFieldErrorOnBookPage() throws Exception {
+        mvc.perform(post("/comments").with(csrf())
+                        .param("bookId", "2")
+                        .param("text", "Купуйте SPAM тут"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("book"))
+                .andExpect(model().attributeHasFieldErrors("commentForm", "text"))
+                .andExpect(content().string(containsString("Текст містить заборонені слова")));
+    }
+
+    @Test
+    @WithMockUser(username = "Student", roles = "USER")
+    void emptyCommentShowsFieldError() throws Exception {
+        mvc.perform(post("/comments").with(csrf())
+                        .param("bookId", "2")
+                        .param("text", ""))
+                .andExpect(status().isOk())
+                .andExpect(model().attributeHasFieldErrors("commentForm", "text"));
+    }
+
+    @Test
+    void failedFormActionRedirectsToErrorPage() throws Exception {
+        // MvcExceptionHandler: POST з помилкою -> redirect:/error-page з повідомленням
+        mvc.perform(post("/books/999999/delete").with(csrf()))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/error-page"))
+                .andExpect(flash().attribute("status", 404));
+    }
+
+    @Test
     void unknownBookShowsErrorPage() throws Exception {
         mvc.perform(get("/books/999999"))
                 .andExpect(status().isNotFound())

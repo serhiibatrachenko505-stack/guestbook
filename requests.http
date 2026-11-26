@@ -103,3 +103,7 @@ Authorization: Basic admin admin
 ### Інформація про застосунок
 GET http://localhost:8080/api/info
 Authorization: Basic admin admin
+
+### 400 — некоректний ідентифікатор (InvalidCommentDeleteException)
+DELETE http://localhost:8080/api/comments/2?bookId=0
+Authorization: Basic admin admin

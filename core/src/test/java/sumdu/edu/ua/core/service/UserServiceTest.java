@@ -17,13 +17,13 @@ import sumdu.edu.ua.core.exception.ValidationException;
 /** Реєстрація та підтвердження акаунта без БД і без пошти. */
 class UserServiceTest {
 
-    private CommentServiceTest.FakeUsers users;
+    private CommentServiceFakePortsTest.FakeUsers users;
     private final List<String> sentCodes = new ArrayList<>();
     private UserService service;
 
     @BeforeEach
     void setUp() {
-        users = new CommentServiceTest.FakeUsers();
+        users = new CommentServiceFakePortsTest.FakeUsers();
         service = new UserService(users, raw -> "HASH(" + raw + ")",
                 (email, username, code) -> sentCodes.add(code));
     }

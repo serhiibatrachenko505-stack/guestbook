@@ -62,6 +62,14 @@ class ApplicationContextTest {
     }
 
     @Test
+    void aspectsAreRegisteredAndServiceIsProxied() {
+        assertNotNull(context.getBean(sumdu.edu.ua.web.aop.CommentServiceLoggingAspect.class));
+        assertNotNull(context.getBean(sumdu.edu.ua.web.aop.ServiceTimingAspect.class));
+        org.junit.jupiter.api.Assertions.assertTrue(
+                AopUtils.isAopProxy(context.getBean(sumdu.edu.ua.core.service.CommentService.class)));
+    }
+
+    @Test
     void portsAreImplementedByJpaAdapters() {
         Object users = context.getBean(UserRepositoryPort.class);
         assertEquals("JpaUserRepositoryAdapter", AopUtils.getTargetClass(users).getSimpleName());

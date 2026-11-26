@@ -75,7 +75,8 @@ public class SecurityConfig {
                 .requestMatchers(antMatcher("/style.css"), antMatcher("/css/**"), antMatcher("/js/**"),
                         antMatcher("/images/**"), antMatcher("/img/**"), antMatcher("/favicon.ico")).permitAll()
                 .requestMatchers(antMatcher("/login"), antMatcher("/register"), antMatcher("/confirm"),
-                        antMatcher("/error"), antMatcher("/403"), antMatcher("/404")).permitAll()
+                        antMatcher("/error"), antMatcher("/403"), antMatcher("/404"),
+                        antMatcher("/error-page")).permitAll()
                 // H2 Console — лише адміністратор
                 .requestMatchers(PathRequest.toH2Console()).hasRole("ADMIN")
                 // керування книгами — лише ADMIN

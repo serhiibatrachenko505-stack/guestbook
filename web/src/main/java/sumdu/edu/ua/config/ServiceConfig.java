@@ -18,6 +18,7 @@ import sumdu.edu.ua.core.service.CommentService;
 import sumdu.edu.ua.core.service.UserService;
 
 /**
+ * Реєстрація сервісів core як Spring-бінів (ServiceConfig).
  * Java-конфігурація бінів.
  * Сервіси з core не мають анотацій Spring (core залишається чистим),
  * тому вони реєструються тут через @Bean. Spring сам передає в методи
@@ -25,8 +26,8 @@ import sumdu.edu.ua.core.service.UserService;
  */
 @Configuration
 @EnableConfigurationProperties(LibraryProperties.class)
-public class AppConfig {
-    private static final Logger log = LoggerFactory.getLogger(AppConfig.class);
+public class ServiceConfig {
+    private static final Logger log = LoggerFactory.getLogger(ServiceConfig.class);
 
     /** Кастомний бін: годинник, від якого залежить правило видалення відгуків. */
     @Bean

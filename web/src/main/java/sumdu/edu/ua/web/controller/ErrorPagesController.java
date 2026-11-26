@@ -5,7 +5,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.RequestMapping;
 
-/** Сторінки помилок доступу: /403 (бракує прав) та /404. */
+/** Сторінки помилок: /403 (бракує прав), /404 та /error-page (після redirect з MvcExceptionHandler). */
 @Controller
 public class ErrorPagesController {
 
@@ -14,6 +14,19 @@ public class ErrorPagesController {
     public String forbidden(HttpServletResponse resp) {
         resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
         return "403";
+    }
+
+    /**
+     * Сторінка після невдалої дії з форми. Дані (status, titleKey, details) приходять
+     * як flash-атрибути redirect-у і вже лежать у Model.
+     */
+    @RequestMapping("/error-page")
+    public String errorPage(Model model) {
+        if (!model.containsAttribute("status")) {
+            model.addAttribute("status", 400);
+            model.addAttribute("titleKey", "error.generic");
+        }
+        return "error";
     }
 
     @RequestMapping("/404")

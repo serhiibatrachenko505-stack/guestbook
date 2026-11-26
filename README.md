@@ -1,12 +1,11 @@
-# Лабораторна робота 9. Spring Security
+# Лабораторна робота 10. Обробка винятків, AOP та тестування
 
-Каталог книг з відгуками, захищений Spring Security: вхід через форму, реєстрація з підтвердженням email, ролі USER і ADMIN, захищений REST API. Основа — лабораторна 8 (JPA, Hibernate, Flyway).
+Каталог книг з відгуками. На прикладі видалення коментаря реалізовано валідацію з власними винятками в core, глобальну обробку винятків у web, AOP-логування сервісного шару та юніт- й інтеграційні тести. Основа — лабораторна 9 (Spring Security).
 
 ## Версії
 
 - JDK 17, Maven 3.8.4
-- Spring Boot 3.3.4 (Spring Security 6.3)
-- H2 2.2.224
+- Spring Boot 3.3.4 (Spring AOP + AspectJ-анотації, JUnit 5, Mockito 5)
 
 ## Як запустити
 
@@ -15,46 +14,47 @@ mvn clean install
 mvn -pl web spring-boot:run
 ```
 
-Відкрити http://localhost:8080/ — гостя буде перенаправлено на сторінку входу.
+Тестові акаунти — як у ЛР9: `admin` / `admin` (ADMIN), `Student` / `password` (USER).
 
-## Тестові акаунти
+## Що реалізовано
 
-| Логін | Пароль | Роль |
-|---|---|---|
-| admin | admin | ADMIN |
-| Student | password | USER |
-| Олена | password | USER |
-| Андрій | password | USER |
+### core
+- Винятки (`core.exception`):
+  - `InvalidCommentDeleteException` — ідентифікатори ≤ 0 або відсутній `createdAt` (400)
+  - `CommentTooOldException` — коментар старший за 24 години (400)
+  - `BookNotFoundException` — книгу не знайдено (404)
+  - `InvalidCommentTextException` — заборонені слова в тексті (400, розширення)
+- `CommentService.delete(long bookId, long commentId, Instant createdAt)` — перевірки, потім `repo.delete(bookId, commentId)`
+- `CommentService.validateText(String)` — додатковий метод з валідацією (заборонені слова: spam, казино, ставки)
 
-Паролі тестових акаунтів зберігаються у V2 як `{noop}...`; після першого входу Spring Security автоматично перехешує їх у BCrypt (`{bcrypt}$2a$10$...`).
+### web
+- `error/GlobalApiExceptionHandler` (`@RestControllerAdvice`, найвищий пріоритет) — винятки core → 400/404 + `{"error": "..."}`; для звичайних переходів браузера — redirect назад з повідомленням
+- `error/MvcExceptionHandler` (`@ControllerAdvice` для HTML) — GET: сторінка помилки; POST: `redirect:/error-page` з повідомленням
+- `controller/CommentsController` — `POST /comments/delete` з параметрами `bookId`, `commentId`, `createdAt` викликає `commentService.delete(...)`
+- `config/ServiceConfig` — реєстрація сервісів core як бінів
+- `aop/CommentServiceLoggingAspect` — `@Around` для `CommentService.delete(..)`: параметри, час, помилки
+- `aop/ServiceTimingAspect` — час виконання всіх методів `sumdu.edu.ua.core.service..*(..)` (DEBUG, повільні — WARN)
 
-Новий акаунт: http://localhost:8080/register → лист із посиланням `/confirm?code=...` (якщо пошта не налаштована, посилання є в консолі: `Confirmation link for '...': ...`).
+## Перевірка вручну
 
-## Права доступу
+Під admin на сторінці книги «Кобзар» натиснути «Видалити»:
+- у свіжого відгуку — відгук видаляється, у консолі `Calling CommentService.delete(...)` і `... finished in N ms`;
+- у відгуку Андрія (2 доби тому) — повідомлення про 24 години, у консолі `... failed in N ms: CommentTooOldException`.
 
-| Ресурс | Гість | USER | ADMIN |
-|---|---|---|---|
-| `/login`, `/register`, `/confirm`, статичні файли | ✓ | ✓ | ✓ |
-| `GET /books/**`, `GET /users/**` | → /login | ✓ | ✓ |
-| `POST /comments` (додати відгук) | → /login | ✓ | ✓ |
-| `/books/add`, `POST /books/{id}/delete`, `POST /comments/delete` | → /login | 403 | ✓ |
-| `GET /api/**` | 401 | ✓ | ✓ |
-| `POST/DELETE /api/**` | 401 | 403 | ✓ |
-| `/h2-console` | → /login | 403 | ✓ |
+Через Postman / requests.http:
 
-REST API використовує HTTP Basic (у Postman: Authorization → Basic Auth). Приклади — у `requests.http`.
+```
+POST http://localhost:8080/comments/delete?bookId=1&commentId=2&createdAt=2024-01-01T00:00:00Z
+→ 400 {"error": "Коментар створено більше ніж 24 години тому і не може бути видалений"}
 
-## Безпека в коді
+POST http://localhost:8080/comments/delete?bookId=0&commentId=2&createdAt=2024-01-01T00:00:00Z
+→ 400 {"error": "Некоректний ідентифікатор книги або коментаря"}
+```
 
-- `config/SecurityConfig` — два ланцюжки фільтрів: `/api/**` (Basic, stateless, 401/403 у JSON) і сторінки (форма входу, сесія, CSRF, `/403`); `PasswordEncoder` (BCrypt); `@EnableMethodSecurity(jsr250Enabled = true)`
-- `web/security/AppUserDetailsService` — власний `UserDetailsService` (користувачі з БД) і `UserDetailsPasswordService` (оновлення хешу)
-- `web/security/SecurityAuditListener` — лог входів, невдалих спроб і виходів
-- `core/service/BookService`, `CommentService` — `@RolesAllowed("ADMIN")` на видаленні та додаванні книг
-- `web/controller/BooksController.deleteBook` — `@PreAuthorize("hasRole('ADMIN')")`
-- `V3__security.sql` — email, enabled, confirmation_code
+(сторінкові запити потребують входу і CSRF-токена, тому зручніше перевіряти через браузер або тести; REST API `DELETE /api/comments/2?bookId=1` з Basic admin/admin повертає той самий JSON)
 
 ## Тести
 
-- core: реєстрація, підтвердження, правила відгуків
-- persistence: реєстрація/підтвердження в БД, каскадне видалення книги
-- web: `SecurityTest` — гість (redirect / 401), USER (403 на адмін-діях, немає адмін-кнопок), ADMIN, вхід, оновлення пароля до BCrypt, реєстрація з підтвердженням, вихід
+- core: `CommentServiceTest` (Mockito: `mock`, `assertThrows`, `verifyNoInteractions`, `verify`), `CommentServiceFakePortsTest`, `UserServiceTest`
+- web: `CommentDeleteExceptionIT` (`@SpringBootTest(classes = AppInit.class)`, `@MockBean CommentService`), `CommentDeleteFlowIT` (справжній сервіс, перевірка логів аспекту), `PagesMvcTest`, `ApiMvcTest`, `SecurityTest`, ArchUnit
+- Surefire налаштовано запускати також класи `*IT`

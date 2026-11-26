@@ -76,6 +76,11 @@
             <groupId>org.thymeleaf.extras</groupId>
             <artifactId>thymeleaf-extras-springsecurity6</artifactId>
         </dependency>
+        <!-- ЛР10: аспектно-орієнтоване програмування (Spring AOP + AspectJ-анотації) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-aop</artifactId>
+        </dependency>
         <!-- @WithMockUser, formLogin(), csrf() у тестах -->
         <dependency>
             <groupId>org.springframework.security</groupId>

@@ -76,11 +76,13 @@ logging:
   level:
     root: INFO
     sumdu.edu.ua: INFO
+    # ЛР10: час виконання всіх методів сервісного шару (ServiceTimingAspect)
+    sumdu.edu.ua.web.aop.ServiceTimingAspect: DEBUG
 
 # ---------- власні параметри застосунку (LibraryProperties) ----------
 library:
   title: "Каталог книг"
-  version: "9.0"
+  version: "10.0"
   books:
     default-page-size: 10
   comments:

@@ -1,189 +1,160 @@
 package sumdu.edu.ua.core.service;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.mockito.ArgumentMatchers.anyLong;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
+import static org.mockito.Mockito.when;
 
 import java.time.Clock;
 import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import sumdu.edu.ua.core.domain.Book;
 import sumdu.edu.ua.core.domain.Comment;
-import sumdu.edu.ua.core.domain.Page;
-import sumdu.edu.ua.core.domain.PageRequest;
-import sumdu.edu.ua.core.domain.User;
-import sumdu.edu.ua.core.domain.UserCredentials;
-import sumdu.edu.ua.core.exception.ConflictException;
-import sumdu.edu.ua.core.exception.NotFoundException;
-import sumdu.edu.ua.core.exception.ValidationException;
+import sumdu.edu.ua.core.exception.BookNotFoundException;
+import sumdu.edu.ua.core.exception.CommentTooOldException;
+import sumdu.edu.ua.core.exception.InvalidCommentDeleteException;
+import sumdu.edu.ua.core.exception.InvalidCommentTextException;
 import sumdu.edu.ua.core.port.CatalogRepositoryPort;
 import sumdu.edu.ua.core.port.CommentRepositoryPort;
-import sumdu.edu.ua.core.port.UserRepositoryPort;
 
-/** Перевірка бізнес-правил без БД (порти підмінені in-memory реалізаціями). */
+/**
+ * Юніт-тести CommentService (JUnit 5 + Mockito).
+ * Порт репозиторію — мок, тому перевіряється лише логіка сервісу, без БД.
+ */
 class CommentServiceTest {
 
-    private static final Instant NOW = Instant.parse("2026-11-20T12:00:00Z");
+    // ------------------------------------------------------------ delete(bookId, commentId, createdAt)
 
-    private FakeComments comments;
-    private FakeUsers users;
-    private CommentService service;
+    @Test
+    void delete_withNegativeIds_throwsInvalidCommentDeleteException() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        CommentService service = new CommentService(repo);
 
-    @BeforeEach
-    void setUp() {
-        comments = new FakeComments();
-        users = new FakeUsers();
-        service = new CommentService(comments, new FakeBooks(), new UserService(users),
-                Clock.fixed(NOW, ZoneOffset.UTC));
+        assertThrows(InvalidCommentDeleteException.class,
+                () -> service.delete(-1, 0, Instant.now()));
+
+        verifyNoInteractions(repo);
     }
 
     @Test
-    void freshCommentCanBeDeleted() {
-        comments.store.add(new Comment(1, 1, "Ann", "Hi", NOW.minus(Duration.ofHours(23))));
-        service.delete(1, 1);
-        assertTrue(comments.store.isEmpty());
+    void delete_withZeroCommentId_throwsInvalidCommentDeleteException() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        CommentService service = new CommentService(repo);
+
+        assertThrows(InvalidCommentDeleteException.class,
+                () -> service.delete(1, 0, Instant.now()));
+
+        verifyNoInteractions(repo);
     }
 
     @Test
-    void commentOlderThan24HoursCannotBeDeleted() {
-        comments.store.add(new Comment(1, 1, "Ann", "Hi", NOW.minus(Duration.ofHours(25))));
-        assertThrows(ConflictException.class, () -> service.delete(1, 1));
-        assertEquals(1, comments.store.size());
+    void delete_withoutCreatedAt_throwsInvalidCommentDeleteException() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        CommentService service = new CommentService(repo);
+
+        var ex = assertThrows(InvalidCommentDeleteException.class,
+                () -> service.delete(1, 1, null));
+
+        assertEquals("Не вказано дату створення коментаря", ex.getMessage());
+        verifyNoInteractions(repo);
     }
 
     @Test
-    void deletingMissingCommentGivesNotFound() {
-        assertThrows(NotFoundException.class, () -> service.delete(1, 42));
+    void delete_tooOldComment_throwsCommentTooOldException() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        CommentService service = new CommentService(repo);
+
+        Instant twoDaysAgo = Instant.now().minusSeconds(48 * 3600);
+
+        var ex = assertThrows(CommentTooOldException.class,
+                () -> service.delete(1, 1, twoDaysAgo));
+
+        assertEquals("Коментар створено більше ніж 24 години тому і не може бути видалений", ex.getMessage());
+        verifyNoInteractions(repo);
     }
 
     @Test
-    void emptyAuthorIsRejected() {
-        assertThrows(ValidationException.class, () -> service.add(1, "  ", "text"));
+    void delete_validData_callsRepositoryDelete() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        CommentService service = new CommentService(repo);
+
+        Instant oneHourAgo = Instant.now().minusSeconds(3600);
+
+        service.delete(10, 20, oneHourAgo);
+
+        verify(repo).delete(10, 20);
     }
 
     @Test
-    void tooLongTextIsRejected() {
-        assertThrows(ValidationException.class, () -> service.add(1, "Ann", "x".repeat(1001)));
+    void delete_exactlyAtBoundary_isAllowed() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        Instant now = Instant.parse("2026-11-26T12:00:00Z");
+        CommentService service = new CommentService(repo, null, null,
+                Clock.fixed(now, ZoneOffset.UTC), Duration.ofHours(24));
+
+        service.delete(1, 2, now.minus(Duration.ofHours(24)));     // рівно 24 год — ще можна
+
+        verify(repo).delete(1, 2);
     }
 
     @Test
-    void commentForUnknownBookGivesNotFound() {
-        assertThrows(NotFoundException.class, () -> service.add(999, "Ann", "text"));
+    void delete_byIds_takesCreatedAtFromRepository() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        CommentService service = new CommentService(repo);
+        Comment old = new Comment(2, 1, "Андрій", "text", Instant.now().minus(Duration.ofDays(2)));
+        when(repo.findById(1, 2)).thenReturn(Optional.of(old));
+
+        assertThrows(CommentTooOldException.class, () -> service.delete(1, 2));
+
+        verify(repo, never()).delete(anyLong(), anyLong());
+    }
+
+    // ------------------------------------------------------------ додатково: validateText / add (+20%)
+
+    @Test
+    void validateText_withForbiddenWord_throwsInvalidCommentTextException() {
+        CommentService service = new CommentService(mock(CommentRepositoryPort.class));
+
+        var ex = assertThrows(InvalidCommentTextException.class,
+                () -> service.validateText("Найкраще КАЗИНО онлайн"));
+
+        assertTrue(ex.getMessage().contains("казино"));
     }
 
     @Test
-    void nonPositiveIdsAreRejected() {
-        assertThrows(ValidationException.class, () -> service.add(0, "Ann", "text"));
-        assertThrows(ValidationException.class, () -> service.delete(1, -5));
+    void validateText_withNormalText_returnsTrimmedText() {
+        CommentService service = new CommentService(mock(CommentRepositoryPort.class));
+
+        assertEquals("Чудова книга", service.validateText("  Чудова книга  "));
     }
 
     @Test
-    void newAuthorBecomesUserAndCommentIsLinked() {
-        Comment c = service.add(1, "Ann", "Great");
-        assertNotNull(c.getUserId());
-        assertEquals("Ann", users.store.get(0).getUsername());
-        assertEquals(1, service.getCommentsByUser(c.getUserId()).size());
+    void add_withForbiddenWord_doesNotTouchRepositories() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        CatalogRepositoryPort books = mock(CatalogRepositoryPort.class);
+        CommentService service = new CommentService(repo, books, null, Clock.systemUTC());
+
+        assertThrows(InvalidCommentTextException.class, () -> service.add(1, "Ann", "buy spam here"));
+
+        verifyNoInteractions(repo, books);
     }
 
     @Test
-    void existingUserIsReused() {
-        service.add(1, "Ann", "First");
-        service.add(1, "Ann", "Second");
-        assertEquals(1, users.store.size());
-        assertEquals(2, service.getCommentsByUser(users.store.get(0).getId()).size());
-    }
+    void add_forUnknownBook_throwsBookNotFoundException() {
+        CommentRepositoryPort repo = mock(CommentRepositoryPort.class);
+        CatalogRepositoryPort books = mock(CatalogRepositoryPort.class);
+        when(books.findById(99)).thenReturn(Optional.empty());
+        CommentService service = new CommentService(repo, books, null, Clock.systemUTC());
 
-    @Test
-    void commentsOfUnknownUserGiveNotFound() {
-        assertThrows(NotFoundException.class, () -> service.getCommentsByUser(77));
-    }
+        assertThrows(BookNotFoundException.class, () -> service.add(99, "Ann", "Good book"));
 
-    // ---- in-memory підміни портів ----
-
-    static class FakeBooks implements CatalogRepositoryPort {
-        public Page<Book> search(String query, PageRequest request) {
-            return new Page<>(List.of(), request, 0);
-        }
-        public Optional<Book> findById(long id) {
-            return id == 1 ? Optional.of(new Book(1, "Kobzar", "Shevchenko", 1840)) : Optional.empty();
-        }
-        public Book add(String title, String author, int pubYear) {
-            return new Book(2, title, author, pubYear);
-        }
-        public boolean delete(long id) {
-            return id == 1;
-        }
-    }
-
-    static class FakeUsers implements UserRepositoryPort {
-        final List<User> store = new ArrayList<>();
-        final Map<String, User> codes = new HashMap<>();
-        final Map<String, String> hashes = new HashMap<>();
-
-        public Optional<User> findById(long id) {
-            return store.stream().filter(u -> u.getId() == id).findFirst();
-        }
-        public Optional<User> findByUsername(String username) {
-            return store.stream().filter(u -> u.getUsername().equals(username)).findFirst();
-        }
-        public List<User> findAll() {
-            return store;
-        }
-        public User create(String username, String role) {
-            User u = new User(store.size() + 1, username, role);
-            store.add(u);
-            return u;
-        }
-        public Optional<UserCredentials> findCredentials(String username) {
-            return Optional.empty();
-        }
-        public boolean existsByEmail(String email) {
-            return store.stream().anyMatch(u -> email.equals(u.getEmail()));
-        }
-        public User register(String username, String email, String hash, String role, String code) {
-            User u = new User(store.size() + 1, username, email, role, false);
-            store.add(u);
-            codes.put(code, u);
-            hashes.put(username, hash);
-            return u;
-        }
-        public Optional<User> confirm(String code) {
-            User u = codes.remove(code);
-            return Optional.ofNullable(u);
-        }
-        public void updatePassword(String username, String hash) {
-            hashes.put(username, hash);
-        }
-    }
-
-    static class FakeComments implements CommentRepositoryPort {
-        final List<Comment> store = new ArrayList<>();
-
-        public Comment add(long bookId, Long userId, String author, String text) {
-            Comment c = new Comment(store.size() + 1, bookId, userId, author, text, NOW);
-            store.add(c);
-            return c;
-        }
-        public Optional<Comment> findById(long bookId, long commentId) {
-            return store.stream().filter(c -> c.getId() == commentId && c.getBookId() == bookId).findFirst();
-        }
-        public Page<Comment> list(long bookId, String author, Instant since, PageRequest request) {
-            return new Page<>(store, request, store.size());
-        }
-        public List<Comment> findByUser(long userId) {
-            return store.stream().filter(c -> c.getUserId() != null && c.getUserId() == userId).toList();
-        }
-        public boolean delete(long bookId, long commentId) {
-            return store.removeIf(c -> c.getId() == commentId && c.getBookId() == bookId);
-        }
+        verifyNoInteractions(repo);
     }
 }

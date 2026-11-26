@@ -54,7 +54,7 @@ public class BooksApiController {
     /** GET /api/books/{id} — книга з відгуками. */
     @GetMapping("/{id}")
     public ResponseEntity<BookDetails> getBook(@PathVariable("id") long id) {
-        Book book = books.get(id);   // NotFoundException -> 404 (GlobalExceptionHandler)
+        Book book = books.get(id);   // NotFoundException -> 404 (RestApiExceptionHandler)
         var bookComments = comments.list(id, null, null, new PageRequest(0, 20));
         return ResponseEntity.ok(new BookDetails(book, bookComments));
     }

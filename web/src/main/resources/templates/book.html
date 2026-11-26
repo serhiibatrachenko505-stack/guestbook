@@ -30,6 +30,7 @@
         <form sec:authorize="hasRole('ADMIN')" th:action="@{/comments/delete}" method="post" class="inline">
             <input type="hidden" name="bookId" th:value="${book.id}">
             <input type="hidden" name="commentId" th:value="${c.id}">
+            <input type="hidden" name="createdAt" th:value="${c.createdAt}">
             <button type="submit" th:text="#{button.delete}">Видалити</button>
         </form>
     </li>
