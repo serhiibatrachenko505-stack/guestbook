@@ -6,6 +6,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
 import sumdu.edu.ua.core.domain.User;
+import sumdu.edu.ua.core.domain.UserCredentials;
 import sumdu.edu.ua.core.port.UserRepositoryPort;
 import sumdu.edu.ua.persistence.jpa.entity.UserEntity;
 import sumdu.edu.ua.persistence.jpa.repository.UserRepository;
@@ -41,5 +42,38 @@ public class JpaUserRepositoryAdapter implements UserRepositoryPort {
     public User create(String username, String role) {
         // пароль не задається: користувача створено автоматично з відгуку
         return Mappers.toDomain(repo.save(new UserEntity(username, null, role)));
+    }
+
+    @Override
+    public Optional<UserCredentials> findCredentials(String username) {
+        return repo.findByUsername(username)
+                .map(e -> new UserCredentials(e.getUsername(), e.getPassword(), e.getRole(), e.isEnabled()));
+    }
+
+    @Override
+    public boolean existsByEmail(String email) {
+        return repo.existsByEmailIgnoreCase(email);
+    }
+
+    @Override
+    @Transactional
+    public User register(String username, String email, String passwordHash, String role, String confirmationCode) {
+        return Mappers.toDomain(repo.save(new UserEntity(username, email, passwordHash, role, confirmationCode)));
+    }
+
+    @Override
+    @Transactional
+    public Optional<User> confirm(String confirmationCode) {
+        // зміни сутності зберігаються автоматично при завершенні транзакції (dirty checking)
+        return repo.findByConfirmationCode(confirmationCode).map(e -> {
+            e.confirm();
+            return Mappers.toDomain(e);
+        });
+    }
+
+    @Override
+    @Transactional
+    public void updatePassword(String username, String passwordHash) {
+        repo.findByUsername(username).ifPresent(e -> e.changePassword(passwordHash));
     }
 }

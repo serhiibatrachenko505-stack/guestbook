@@ -1,11 +1,11 @@
-# Лабораторна робота 8. JPA, Hibernate, Flyway
+# Лабораторна робота 9. Spring Security
 
-Каталог книг з відгуками. Доступ до даних переведено з JDBC на JPA/Hibernate і Spring Data JPA, схемою БД керує Flyway. Додано сутність користувача та сторінку з усіма коментарями користувача. Основа — лабораторна 7 (Thymeleaf + листи FreeMarker).
+Каталог книг з відгуками, захищений Spring Security: вхід через форму, реєстрація з підтвердженням email, ролі USER і ADMIN, захищений REST API. Основа — лабораторна 8 (JPA, Hibernate, Flyway).
 
 ## Версії
 
 - JDK 17, Maven 3.8.4
-- Spring Boot 3.3.4 (Hibernate 6.5, Spring Data JPA 3.3, Flyway 10)
+- Spring Boot 3.3.4 (Spring Security 6.3)
 - H2 2.2.224
 
 ## Як запустити
@@ -15,48 +15,46 @@ mvn clean install
 mvn -pl web spring-boot:run
 ```
 
-- застосунок: http://localhost:8080/books
-- користувачі: http://localhost:8080/users
-- H2 Console: http://localhost:8080/h2-console
-  (JDBC URL `jdbc:h2:file:./data/library-jpa;AUTO_SERVER=TRUE`, користувач `sa`, пароль порожній)
+Відкрити http://localhost:8080/ — гостя буде перенаправлено на сторінку входу.
 
-Для листів (ЛР7) потрібна змінна середовища `MAIL_APP_PASSWORD`; без неї книга зберігається, а в лог пишеться попередження.
+## Тестові акаунти
 
-## Модулі
+| Логін | Пароль | Роль |
+|---|---|---|
+| admin | admin | ADMIN |
+| Student | password | USER |
+| Олена | password | USER |
+| Андрій | password | USER |
 
-- **core** — доменні моделі `Book`, `Comment`, `User`; порти `CatalogRepositoryPort`, `CommentRepositoryPort`, `UserRepositoryPort`; сервіси `BookService`, `CommentService`, `UserService` (транзакції — `jakarta.transaction.Transactional`). Не залежить від Spring, JPA і JDBC.
-- **persistence** — JPA:
-  - `jpa/entity` — `BookEntity`, `UserEntity`, `CommentEntity`
-  - `jpa/repository` — `BookRepository`, `UserRepository`, `CommentRepository` (Spring Data `JpaRepository`)
-  - `jpa/adapter` — адаптери, що реалізують порти core через репозиторії
-  - `resources/db/migration` — `V1__init.sql` (схема), `V2__seed_data.sql` (тестові дані)
-- **web** — Spring MVC + Thymeleaf; `UserController` (`/users`, `/users/{id}/comments`); `config/JpaConfig` — де шукати сутності й репозиторії.
+Паролі тестових акаунтів зберігаються у V2 як `{noop}...`; після першого входу Spring Security автоматично перехешує їх у BCrypt (`{bcrypt}$2a$10$...`).
 
-## Зв'язки
+Новий акаунт: http://localhost:8080/register → лист із посиланням `/confirm?code=...` (якщо пошта не налаштована, посилання є в консолі: `Confirmation link for '...': ...`).
 
-```
-books 1 ──< comments >── 1 users
-```
+## Права доступу
 
-- `BookEntity.comments` — `@OneToMany(mappedBy = "book", cascade = ALL, orphanRemoval = true, fetch = LAZY)`
-- `UserEntity.comments` — `@OneToMany(mappedBy = "user", fetch = LAZY)`
-- `CommentEntity.book` / `CommentEntity.user` — `@ManyToOne(fetch = LAZY)` + `@JoinColumn`
+| Ресурс | Гість | USER | ADMIN |
+|---|---|---|---|
+| `/login`, `/register`, `/confirm`, статичні файли | ✓ | ✓ | ✓ |
+| `GET /books/**`, `GET /users/**` | → /login | ✓ | ✓ |
+| `POST /comments` (додати відгук) | → /login | ✓ | ✓ |
+| `/books/add`, `POST /books/{id}/delete`, `POST /comments/delete` | → /login | 403 | ✓ |
+| `GET /api/**` | 401 | ✓ | ✓ |
+| `POST/DELETE /api/**` | 401 | 403 | ✓ |
+| `/h2-console` | → /login | 403 | ✓ |
 
-У БД: `comments.book_id → books.id ON DELETE CASCADE`, `comments.user_id → users.id ON DELETE SET NULL`.
+REST API використовує HTTP Basic (у Postman: Authorization → Basic Auth). Приклади — у `requests.http`.
 
-## Сторінки
+## Безпека в коді
 
-| URL | Опис |
-|---|---|
-| `/books` | список книг |
-| `/books/{id}` | книга з відгуками; ім'я автора веде на сторінку його коментарів |
-| `/users` | користувачі та кількість їхніх відгуків |
-| `/users/{id}/comments` | усі коментарі користувача з посиланнями на книги |
-
-Автор нового відгуку автоматично стає користувачем (знаходиться за іменем або створюється з роллю USER).
+- `config/SecurityConfig` — два ланцюжки фільтрів: `/api/**` (Basic, stateless, 401/403 у JSON) і сторінки (форма входу, сесія, CSRF, `/403`); `PasswordEncoder` (BCrypt); `@EnableMethodSecurity(jsr250Enabled = true)`
+- `web/security/AppUserDetailsService` — власний `UserDetailsService` (користувачі з БД) і `UserDetailsPasswordService` (оновлення хешу)
+- `web/security/SecurityAuditListener` — лог входів, невдалих спроб і виходів
+- `core/service/BookService`, `CommentService` — `@RolesAllowed("ADMIN")` на видаленні та додаванні книг
+- `web/controller/BooksController.deleteBook` — `@PreAuthorize("hasRole('ADMIN')")`
+- `V3__security.sql` — email, enabled, confirmation_code
 
 ## Тести
 
-- core: правила сервісів (in-memory порти), ArchUnit
-- persistence: `JpaRepositoriesTest` (`@DataJpaTest`, Flyway на H2 в пам'яті), ArchUnit (немає `java.sql` у жодному модулі, сутності лише в persistence)
-- web: сторінки, REST API, контекст (JPA, Flyway, адаптери), ArchUnit
+- core: реєстрація, підтвердження, правила відгуків
+- persistence: реєстрація/підтвердження в БД, каскадне видалення книги
+- web: `SecurityTest` — гість (redirect / 401), USER (403 на адмін-діях, немає адмін-кнопок), ADMIN, вхід, оновлення пароля до BCrypt, реєстрація з підтвердженням, вихід

@@ -7,6 +7,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.converter.HttpMessageNotReadableException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
 import org.springframework.web.bind.MissingServletRequestParameterException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -72,6 +73,12 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorBody> noRoute(NoResourceFoundException e, HttpServletRequest req) {
         return error(HttpStatus.NOT_FOUND, "Route not found", req, null);
+    }
+
+    /** Заборонено методом сервісу (@RolesAllowed / @PreAuthorize). */
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<ErrorBody> forbidden(AccessDeniedException e, HttpServletRequest req) {
+        return error(HttpStatus.FORBIDDEN, "Access denied", req, null);
     }
 
     // ---- усе інше ----

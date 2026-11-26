@@ -1,5 +1,6 @@
 package sumdu.edu.ua.core.service;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
 import java.time.Clock;
 import java.time.Duration;
@@ -77,6 +78,7 @@ public class CommentService {
      * @return видалений відгук (для логування)
      */
     @Transactional
+    @RolesAllowed("ADMIN")
     public Comment delete(long bookId, long commentId) {
         PageRules.checkId(bookId, "bookId");
         PageRules.checkId(commentId, "commentId");

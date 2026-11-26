@@ -13,4 +13,6 @@ public interface CatalogRepositoryPort {
     Optional<Book> findById(long id);
 
     Book add(String title, String author, int pubYear);
+
+    boolean delete(long id);
 }

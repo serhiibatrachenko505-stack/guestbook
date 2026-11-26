@@ -10,7 +10,9 @@ import java.time.Duration;
 import java.time.Instant;
 import java.time.ZoneOffset;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +21,7 @@ import sumdu.edu.ua.core.domain.Comment;
 import sumdu.edu.ua.core.domain.Page;
 import sumdu.edu.ua.core.domain.PageRequest;
 import sumdu.edu.ua.core.domain.User;
+import sumdu.edu.ua.core.domain.UserCredentials;
 import sumdu.edu.ua.core.exception.ConflictException;
 import sumdu.edu.ua.core.exception.NotFoundException;
 import sumdu.edu.ua.core.exception.ValidationException;
@@ -116,10 +119,15 @@ class CommentServiceTest {
         public Book add(String title, String author, int pubYear) {
             return new Book(2, title, author, pubYear);
         }
+        public boolean delete(long id) {
+            return id == 1;
+        }
     }
 
     static class FakeUsers implements UserRepositoryPort {
         final List<User> store = new ArrayList<>();
+        final Map<String, User> codes = new HashMap<>();
+        final Map<String, String> hashes = new HashMap<>();
 
         public Optional<User> findById(long id) {
             return store.stream().filter(u -> u.getId() == id).findFirst();
@@ -134,6 +142,26 @@ class CommentServiceTest {
             User u = new User(store.size() + 1, username, role);
             store.add(u);
             return u;
+        }
+        public Optional<UserCredentials> findCredentials(String username) {
+            return Optional.empty();
+        }
+        public boolean existsByEmail(String email) {
+            return store.stream().anyMatch(u -> email.equals(u.getEmail()));
+        }
+        public User register(String username, String email, String hash, String role, String code) {
+            User u = new User(store.size() + 1, username, email, role, false);
+            store.add(u);
+            codes.put(code, u);
+            hashes.put(username, hash);
+            return u;
+        }
+        public Optional<User> confirm(String code) {
+            User u = codes.remove(code);
+            return Optional.ofNullable(u);
+        }
+        public void updatePassword(String username, String hash) {
+            hashes.put(username, hash);
         }
     }
 

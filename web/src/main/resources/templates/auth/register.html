@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head th:replace="~{fragments/header :: head(#{title.register})}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<div class="auth-box">
+    <h1 th:text="#{title.register}">Реєстрація</h1>
+
+    <form th:action="@{/register}" th:object="${registerForm}" method="post" class="form">
+
+        <div class="error" th:if="${#fields.hasGlobalErrors()}">
+            <p th:each="err : ${#fields.globalErrors()}" th:text="${err}">Помилка</p>
+        </div>
+
+        <label>
+            <span th:text="#{label.username}">Ім’я користувача</span>
+            <input type="text" th:field="*{username}" th:errorclass="invalid" maxlength="64">
+        </label>
+        <span class="error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}"></span>
+
+        <label>
+            <span>Email</span>
+            <input type="email" th:field="*{email}" th:errorclass="invalid" maxlength="128">
+        </label>
+        <span class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}"></span>
+
+        <label>
+            <span th:text="#{label.password}">Пароль</span>
+            <input type="password" th:field="*{password}" th:errorclass="invalid">
+        </label>
+        <span class="error" th:if="${#fields.hasErrors('password')}" th:errors="*{password}"></span>
+
+        <label>
+            <span th:text="#{label.confirmPassword}">Повторіть пароль</span>
+            <input type="password" th:field="*{confirmPassword}" th:errorclass="invalid">
+        </label>
+        <span class="error" th:if="${#fields.hasErrors('confirmPassword')}" th:errors="*{confirmPassword}"></span>
+
+        <p class="meta" th:text="#{register.hint}">Після реєстрації на пошту прийде лист для підтвердження.</p>
+
+        <button type="submit" th:text="#{nav.register}">Зареєструватися</button>
+    </form>
+
+    <p>
+        <span th:text="#{register.haveAccount}">Вже є акаунт?</span>
+        <a th:href="@{/login}" th:text="#{nav.login}">Увійти</a>
+    </p>
+</div>
+
+<footer th:replace="~{fragments/header :: footer}"></footer>
+</body>
+</html>

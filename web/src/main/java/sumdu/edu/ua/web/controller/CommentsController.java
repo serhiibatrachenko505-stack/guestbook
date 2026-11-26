@@ -1,6 +1,7 @@
 package sumdu.edu.ua.web.controller;
 
 import jakarta.validation.Valid;
+import java.security.Principal;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Controller;
@@ -37,6 +38,7 @@ public class CommentsController {
     @PostMapping
     public String add(@RequestParam("bookId") long bookId,
                       @Valid @ModelAttribute("commentForm") CommentForm form,
+                      Principal principal,
                       BindingResult binding,
                       Model model,
                       RedirectAttributes redirect) {
@@ -44,7 +46,8 @@ public class CommentsController {
             bookPage.fill(model, bookId, form);   // показати сторінку книги з помилками у формі
             return "book";
         }
-        Comment saved = comments.add(bookId, form.getAuthor(), form.getText());
+        // автор відгуку — користувач, що увійшов у систему
+        Comment saved = comments.add(bookId, principal.getName(), form.getText());
         log.info("Comment created: id={}, bookId={}, author='{}', length={}",
                 saved.getId(), bookId, saved.getAuthor(), saved.getText().length());
         redirect.addFlashAttribute("message", "msg.commentAdded");

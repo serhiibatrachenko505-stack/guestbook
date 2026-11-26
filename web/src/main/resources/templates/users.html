@@ -13,7 +13,9 @@
     <tr>
         <th>#</th>
         <th th:text="#{label.username}">Ім’я</th>
+        <th>Email</th>
         <th th:text="#{label.role}">Роль</th>
+        <th th:text="#{label.status}">Статус</th>
         <th th:text="#{label.commentsCount}">Відгуків</th>
     </tr>
     </thead>
@@ -21,7 +23,9 @@
     <tr th:each="entry : ${users}">
         <td th:text="${entry.key.id}">1</td>
         <td><a th:href="@{/users/{id}/comments(id=${entry.key.id})}" th:text="${entry.key.username}">Олена</a></td>
+        <td th:text="${entry.key.email} ?: '—'">olena@library.local</td>
         <td th:text="${entry.key.role}">USER</td>
+        <td th:text="${entry.key.enabled} ? #{label.active} : #{label.notConfirmed}">активний</td>
         <td th:text="${entry.value}">3</td>
     </tr>
     </tbody>

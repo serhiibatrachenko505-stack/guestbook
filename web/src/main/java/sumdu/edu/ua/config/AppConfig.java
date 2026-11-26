@@ -10,6 +10,8 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import sumdu.edu.ua.core.port.CatalogRepositoryPort;
 import sumdu.edu.ua.core.port.CommentRepositoryPort;
+import sumdu.edu.ua.core.port.NotificationPort;
+import sumdu.edu.ua.core.port.PasswordHasher;
 import sumdu.edu.ua.core.port.UserRepositoryPort;
 import sumdu.edu.ua.core.service.BookService;
 import sumdu.edu.ua.core.service.CommentService;
@@ -39,9 +41,9 @@ public class AppConfig {
     }
 
     @Bean
-    public UserService userService(UserRepositoryPort userRepo) {
-        log.info("Creating bean userService with {}", name(userRepo));
-        return new UserService(userRepo);
+    public UserService userService(UserRepositoryPort userRepo, PasswordHasher hasher, NotificationPort notifier) {
+        log.info("Creating bean userService with {}, {}, {}", name(userRepo), name(hasher), name(notifier));
+        return new UserService(userRepo, hasher, notifier);
     }
 
     @Bean

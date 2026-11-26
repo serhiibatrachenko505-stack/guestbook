@@ -21,3 +21,8 @@ form.inline { display: inline; }
 .user-comments p { margin: .2rem 0; }
 small { color: #777; }
 a.button { display: inline-block; padding: .4rem .8rem; border: 1px solid #1a5fb4; border-radius: 4px; text-decoration: none; }
+.user { color: #555; }
+.badge { display: inline-block; font-size: .75rem; padding: .05rem .4rem; border-radius: 3px; background: #b00020; color: #fff; }
+.user-badge { background: #1a5fb4; }
+button.danger { color: #b00020; }
+.auth-box { max-width: 420px; }

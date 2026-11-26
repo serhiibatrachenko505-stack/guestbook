@@ -1,5 +1,6 @@
 package sumdu.edu.ua.core.service;
 
+import jakarta.annotation.security.RolesAllowed;
 import jakarta.transaction.Transactional;
 import java.time.Year;
 import java.util.Set;
@@ -38,7 +39,9 @@ public class BookService {
                 .orElseThrow(() -> new NotFoundException("Book " + id + " not found"));
     }
 
+    /** Додавати книги може лише адміністратор (перевіряє Spring Security, jsr250). */
     @Transactional
+    @RolesAllowed("ADMIN")
     public Book add(String title, String author, Integer pubYear) {
         String t = required(title, "title", MAX_TITLE);
         String a = required(author, "author", MAX_AUTHOR);
@@ -47,6 +50,16 @@ public class BookService {
             throw new ValidationException("pubYear must be between 1 and " + currentYear);
         }
         return books.add(t, a, pubYear);
+    }
+
+    /** Видалення книги разом з її відгуками — лише адміністратор. */
+    @Transactional
+    @RolesAllowed("ADMIN")
+    public void delete(long id) {
+        PageRules.checkId(id, "id");
+        if (!books.delete(id)) {
+            throw new NotFoundException("Book " + id + " not found");
+        }
     }
 
     static String required(String value, String field, int max) {

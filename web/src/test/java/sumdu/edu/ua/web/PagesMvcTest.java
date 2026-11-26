@@ -2,6 +2,7 @@ package sumdu.edu.ua.web;
 
 import static org.hamcrest.Matchers.containsString;
 import static org.hamcrest.Matchers.not;
+import static org.springframework.security.test.web.servlet.request.SecurityMockMvcRequestPostProcessors.csrf;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.content;
@@ -17,12 +18,14 @@ import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMock
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MockMvc;
 import sumdu.edu.ua.web.service.MailService;
 
 /** HTML-сторінки Thymeleaf: контролер -> Model -> шаблон, форми і локалізація. */
 @SpringBootTest
 @AutoConfigureMockMvc
+@WithMockUser(username = "admin", roles = "ADMIN")   // сторінки доступні лише після входу
 class PagesMvcTest {
 
     @Autowired
@@ -73,7 +76,7 @@ class PagesMvcTest {
 
     @Test
     void validBookIsSavedAndRedirects() throws Exception {
-        mvc.perform(post("/books/add")
+        mvc.perform(post("/books/add").with(csrf())
                         .param("title", "Thymeleaf Test Book")
                         .param("author", "Test Author")
                         .param("pubYear", "2024"))
@@ -84,7 +87,7 @@ class PagesMvcTest {
 
     @Test
     void invalidBookReturnsFormWithErrors() throws Exception {
-        mvc.perform(post("/books/add")
+        mvc.perform(post("/books/add").with(csrf())
                         .param("title", "")
                         .param("author", "Someone")
                         .param("pubYear", "2024"))
@@ -127,10 +130,10 @@ class PagesMvcTest {
     }
 
     @Test
+    @WithMockUser(username = "Test Reader", roles = "USER")   // автор відгуку = поточний користувач
     void commentFromFormIsLinkedToUser() throws Exception {
-        mvc.perform(post("/comments")
+        mvc.perform(post("/comments").with(csrf())
                         .param("bookId", "2")
-                        .param("author", "Test Reader")
                         .param("text", "Comment from form"))
                 .andExpect(status().is3xxRedirection())
                 .andExpect(redirectedUrl("/books/2"));

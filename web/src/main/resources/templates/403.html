@@ -1,0 +1,22 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:lang="${#locale.language}">
+<head th:replace="~{fragments/header :: head(#{title.forbidden})}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<h1>403 · <span th:text="#{title.forbidden}">Доступ заборонено</span></h1>
+
+<p class="error" th:text="#{forbidden.text}">У вас недостатньо прав для цієї дії.</p>
+<p class="meta" sec:authorize="isAuthenticated()">
+    <span th:text="#{nav.signedInAs}">Ви увійшли як</span>
+    <b sec:authentication="name">user</b>
+    (<span sec:authentication="principal.authorities">[ROLE_USER]</span>)
+</p>
+
+<p><a th:href="@{/books}" th:text="#{label.back}">← До каталогу</a></p>
+
+<footer th:replace="~{fragments/header :: footer}"></footer>
+</body>
+</html>

@@ -80,7 +80,7 @@ logging:
 # ---------- власні параметри застосунку (LibraryProperties) ----------
 library:
   title: "Каталог книг"
-  version: "8.0"
+  version: "9.0"
   books:
     default-page-size: 10
   comments:
@@ -88,5 +88,7 @@ library:
 
 # ---------- адреса отримувача листів (ЛР7) ----------
 app:
+  # адреса застосунку для посилань у листах (підтвердження акаунта)
+  base-url: http://localhost:8080
   mail:
     admin: serhiibatrachenko505@gmail.com

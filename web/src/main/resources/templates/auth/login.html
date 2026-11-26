@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head th:replace="~{fragments/header :: head(#{title.login})}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<div class="auth-box">
+    <h1 th:text="#{title.login}">Вхід</h1>
+
+    <!-- повідомлення за параметрами, які виставляє Spring Security / AuthController -->
+    <p class="error" th:if="${param.error}"        th:text="#{login.error}">Невірне ім’я або пароль</p>
+    <p class="error" th:if="${param.disabled}"     th:text="#{login.disabled}">Акаунт не підтверджено</p>
+    <p class="msg"   th:if="${param.logout}"       th:text="#{login.logout}">Ви вийшли із системи</p>
+    <p class="msg"   th:if="${param.registered}"   th:text="#{login.registered}">Перевірте пошту</p>
+    <p class="msg"   th:if="${param.confirmed}"    th:text="#{login.confirmed}">Акаунт підтверджено</p>
+    <p class="error" th:if="${param.confirmError}" th:text="#{login.confirmError}">Код недійсний</p>
+
+    <!-- Форма за вимогами Spring Security: POST /login, поля username і password, CSRF-токен додає Thymeleaf -->
+    <form th:action="@{/login}" method="post" class="form">
+        <label>
+            <span th:text="#{label.username}">Ім’я користувача</span>
+            <input type="text" name="username" autofocus required>
+        </label>
+        <label>
+            <span th:text="#{label.password}">Пароль</span>
+            <input type="password" name="password" required>
+        </label>
+        <button type="submit" th:text="#{nav.login}">Увійти</button>
+    </form>
+
+    <p>
+        <span th:text="#{login.noAccount}">Немає акаунта?</span>
+        <a th:href="@{/register}" th:text="#{nav.register}">Реєстрація</a>
+    </p>
+</div>
+
+<footer th:replace="~{fragments/header :: footer}"></footer>
+</body>
+</html>

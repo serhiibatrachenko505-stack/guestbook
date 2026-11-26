@@ -108,4 +108,22 @@ class WebArchitectureTest {
                 .resideInAnyPackage("jakarta.servlet..", "java.sql..", "javax.sql..", "org.springframework..")
                 .check(classes);
     }
+
+    @Test
+    void securityComponentsShouldResideInWebSecurity() {
+        classes()
+                .that().implement(org.springframework.security.core.userdetails.UserDetailsService.class)
+                .should().resideInAPackage("sumdu.edu.ua.web.security..")
+                .check(classes);
+    }
+
+    @Test
+    void coreShouldNotDependOnSpringSecurity() {
+        noClasses()
+                .that().resideInAPackage("sumdu.edu.ua.core..")
+                .should().dependOnClassesThat()
+                .resideInAPackage("org.springframework.security..")
+                .because("core описує ролі через стандартну @RolesAllowed і порти PasswordHasher / NotificationPort")
+                .check(classes);
+    }
 }

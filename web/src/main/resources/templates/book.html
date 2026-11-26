@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:lang="${#locale.language}">
 <head th:replace="~{fragments/header :: head(${book.title})}"></head>
 <body>
 <header th:replace="~{fragments/header :: header}"></header>
@@ -25,7 +27,7 @@
         <b th:unless="${c.userId}" th:text="${c.author}">Гість</b><b>:</b>
         <span th:text="${c.text}">Класика</span>
         <small th:text="${@dates.format(c.createdAt)}">20.11.2026 10:00</small>
-        <form th:action="@{/comments/delete}" method="post" class="inline">
+        <form sec:authorize="hasRole('ADMIN')" th:action="@{/comments/delete}" method="post" class="inline">
             <input type="hidden" name="bookId" th:value="${book.id}">
             <input type="hidden" name="commentId" th:value="${c.id}">
             <button type="submit" th:text="#{button.delete}">Видалити</button>
@@ -38,11 +40,10 @@
 <form th:action="@{/comments}" th:object="${commentForm}" method="post" class="form">
     <input type="hidden" name="bookId" th:value="${book.id}">
 
-    <label>
-        <span th:text="#{label.yourName}">Ваше ім’я</span>
-        <input type="text" th:field="*{author}" th:errorclass="invalid" maxlength="64">
-    </label>
-    <span class="error" th:if="${#fields.hasErrors('author')}" th:errors="*{author}">Обов’язкове поле</span>
+    <p class="meta">
+        <span th:text="#{label.commentingAs}">Ви коментуєте як</span>
+        <b sec:authentication="name">Олена</b>
+    </p>
 
     <label>
         <span th:text="#{label.comment}">Відгук</span>

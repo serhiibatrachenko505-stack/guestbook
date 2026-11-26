@@ -49,7 +49,16 @@ class ApplicationContextTest {
     void jpaAndFlywayAreConfigured() {
         assertNotNull(context.getBean(EntityManagerFactory.class));
         Flyway flyway = context.getBean(Flyway.class);
-        assertEquals(2, flyway.info().applied().length);        // V1__init, V2__seed_data
+        assertEquals(3, flyway.info().applied().length);        // V1__init, V2__seed_data, V3__security
+    }
+
+    @Test
+    void securityIsConfigured() {
+        assertEquals(2, context.getBeansOfType(org.springframework.security.web.SecurityFilterChain.class).size());
+        assertInstanceOf(sumdu.edu.ua.web.security.AppUserDetailsService.class,
+                context.getBean(org.springframework.security.core.userdetails.UserDetailsService.class));
+        var encoder = context.getBean(org.springframework.security.crypto.password.PasswordEncoder.class);
+        org.junit.jupiter.api.Assertions.assertTrue(encoder.encode("x").startsWith("{bcrypt}"));
     }
 
     @Test

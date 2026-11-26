@@ -9,23 +9,51 @@ GET http://localhost:8080/books
 Accept-Language: en-US
 
 ### ===== REST API (JSON) =====
+### ЛР9: без автентифікації -> 401 Unauthorized
+GET http://localhost:8080/api/books
+
+### USER може читати (HTTP Basic: Student / password)
+GET http://localhost:8080/api/books
+Authorization: Basic Student password
+
+### USER не може змінювати -> 403 Forbidden
+POST http://localhost:8080/api/books
+Authorization: Basic Student password
+Content-Type: application/json
+
+{"title": "Forbidden", "author": "User", "pubYear": 2024}
+
+### ADMIN може все (admin / admin)
+POST http://localhost:8080/api/books
+Authorization: Basic admin admin
+Content-Type: application/json
+
+{"title": "Spring Security in Action", "author": "Laurentiu Spilca", "pubYear": 2024}
+
+### ===== Далі — запити з ЛР5-8 (з авторизацією admin / admin) =====
 ### Список книг (JSON)
 GET http://localhost:8080/api/books
+Authorization: Basic admin admin
 
 ### Пошук, сортування, пагінація
 GET http://localhost:8080/api/books?q=martin&sort=year,desc&size=5
+Authorization: Basic admin admin
 
 ### Книга з відгуками
 GET http://localhost:8080/api/books/1
+Authorization: Basic admin admin
 
 ### 404 — книги не існує
 GET http://localhost:8080/api/books/999
+Authorization: Basic admin admin
 
 ### 400 — id не число
 GET http://localhost:8080/api/books/abc
+Authorization: Basic admin admin
 
 ### Додати книгу -> 201
 POST http://localhost:8080/api/books
+Authorization: Basic admin admin
 Content-Type: application/json
 
 {
@@ -36,9 +64,11 @@ Content-Type: application/json
 
 ### Відгуки до книги
 GET http://localhost:8080/api/comments?bookId=1
+Authorization: Basic admin admin
 
 ### Додати відгук -> 201
 POST http://localhost:8080/api/comments
+Authorization: Basic admin admin
 Content-Type: application/json
 
 {
@@ -49,6 +79,7 @@ Content-Type: application/json
 
 ### 400 — порожній автор
 POST http://localhost:8080/api/comments
+Authorization: Basic admin admin
 Content-Type: application/json
 
 {
@@ -59,12 +90,16 @@ Content-Type: application/json
 
 ### Видалити свіжий відгук -> 204 (id візьміть з відповіді POST)
 DELETE http://localhost:8080/api/comments/3?bookId=1
+Authorization: Basic admin admin
 
 ### 409 — відгуку більше 24 годин
 DELETE http://localhost:8080/api/comments/2?bookId=1
+Authorization: Basic admin admin
 
 ### 405 — метод не підтримується
 PUT http://localhost:8080/api/books
+Authorization: Basic admin admin
 
 ### Інформація про застосунок
 GET http://localhost:8080/api/info
+Authorization: Basic admin admin

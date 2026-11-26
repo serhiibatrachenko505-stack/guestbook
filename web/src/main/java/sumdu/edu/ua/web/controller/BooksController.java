@@ -3,6 +3,7 @@ package sumdu.edu.ua.web.controller;
 import jakarta.validation.Valid;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.validation.BindingResult;
@@ -88,6 +89,16 @@ public class BooksController {
             binding.reject("error.validation", new Object[]{e.getMessage()}, e.getMessage());
             return "book-form";
         }
+    }
+
+    /** Видалення книги: правило в SecurityConfig + @PreAuthorize тут + @RolesAllowed у BookService. */
+    @PostMapping("/{id}/delete")
+    @PreAuthorize("hasRole('ADMIN')")
+    public String deleteBook(@PathVariable("id") long id, RedirectAttributes redirect) {
+        books.delete(id);
+        log.info("Book deleted: id={}", id);
+        redirect.addFlashAttribute("message", "msg.bookDeleted");
+        return "redirect:/books";
     }
 
     @GetMapping("/{id}")

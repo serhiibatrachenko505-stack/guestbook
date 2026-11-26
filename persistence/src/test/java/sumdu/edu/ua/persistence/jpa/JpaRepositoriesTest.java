@@ -86,4 +86,33 @@ class JpaRepositoriesTest {
         assertTrue(u.getId() > 0);
         assertEquals("USER", users.findById(u.getId()).orElseThrow().getRole());
     }
+
+    @Test
+    void registeredUserIsDisabledUntilConfirmed() {
+        users.register("newbie", "newbie@mail.com", "{bcrypt}hash", "USER", "code-123");
+
+        var before = users.findCredentials("newbie").orElseThrow();
+        assertFalse(before.isEnabled());
+        assertEquals("{bcrypt}hash", before.getPasswordHash());
+        assertTrue(users.existsByEmail("NEWBIE@mail.com"));
+
+        assertTrue(users.confirm("code-123").isPresent());
+        assertTrue(users.findCredentials("newbie").orElseThrow().isEnabled());
+        assertFalse(users.confirm("code-123").isPresent());    // код скинуто
+    }
+
+    @Test
+    void seedUsersHaveEmailsAfterV3() {
+        var admin = users.findByUsername("admin").orElseThrow();
+        assertEquals("admin@library.local", admin.getEmail());
+        assertEquals("ADMIN", admin.getRole());
+    }
+
+    @Test
+    void deletingBookRemovesItsComments() {
+        long before = commentRepo.count();
+        assertTrue(catalog.delete(1));                        // у книги 1 є 2 відгуки
+        assertFalse(bookRepo.existsById(1L));
+        assertEquals(before - 2, commentRepo.count());
+    }
 }

@@ -16,7 +16,7 @@ final class Mappers {
     }
 
     static User toDomain(UserEntity e) {
-        return new User(e.getId(), e.getUsername(), e.getRole());
+        return new User(e.getId(), e.getUsername(), e.getEmail(), e.getRole(), e.isEnabled());
     }
 
     static Comment toDomain(CommentEntity e) {

@@ -1,5 +1,7 @@
 <!DOCTYPE html>
-<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<html xmlns:th="http://www.thymeleaf.org"
+      xmlns:sec="http://www.thymeleaf.org/extras/spring-security"
+      th:lang="${#locale.language}">
 <head th:replace="~{fragments/header :: head(#{title.books})}"></head>
 <body>
 <header th:replace="~{fragments/header :: header}"></header>
@@ -33,6 +35,7 @@
         <th th:text="#{label.title}">Назва</th>
         <th th:text="#{label.author}">Автор</th>
         <th th:text="#{label.year}">Рік</th>
+        <th sec:authorize="hasRole('ADMIN')"></th>
     </tr>
     </thead>
     <tbody>
@@ -41,6 +44,13 @@
         <td><a th:href="@{/books/{id}(id=${book.id})}" th:text="${book.title}">Кобзар</a></td>
         <td th:text="${book.author}">Тарас Шевченко</td>
         <td th:text="${book.pubYear}">1840</td>
+        <!-- кнопка видалення лише для адміністратора -->
+        <td sec:authorize="hasRole('ADMIN')">
+            <form th:action="@{/books/{id}/delete(id=${book.id})}" method="post" class="inline"
+                  th:attr="onsubmit=|return confirm('#{confirm.deleteBook}')|">
+                <button type="submit" class="danger" th:text="#{button.delete}">Видалити</button>
+            </form>
+        </td>
     </tr>
     </tbody>
 </table>
@@ -54,7 +64,8 @@
        th:href="@{/books(q=${q}, sort=${sort}, page=${page.page + 1})}" th:text="#{page.next}">Далі →</a>
 </div>
 
-<p><a class="button" th:href="@{/books/add}" th:text="#{label.addBook}">Додати книгу</a></p>
+<!-- кнопка додавання лише для адміністратора -->
+<p sec:authorize="hasRole('ADMIN')"><a class="button" th:href="@{/books/add}" th:text="#{label.addBook}">Додати книгу</a></p>
 
 <footer th:replace="~{fragments/header :: footer}"></footer>
 </body>

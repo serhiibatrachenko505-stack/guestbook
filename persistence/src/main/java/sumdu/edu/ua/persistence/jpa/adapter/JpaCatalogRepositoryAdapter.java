@@ -48,6 +48,16 @@ public class JpaCatalogRepositoryAdapter implements CatalogRepositoryPort {
 
     @Override
     @Transactional
+    public boolean delete(long id) {
+        if (!repo.existsById(id)) {
+            return false;
+        }
+        repo.deleteById(id);          // відгуки видаляються каскадом (CascadeType.ALL + ON DELETE CASCADE)
+        return true;
+    }
+
+    @Override
+    @Transactional
     public Book add(String title, String author, int pubYear) {
         BookEntity saved = repo.save(new BookEntity(title, author, pubYear));
         return Mappers.toDomain(saved);
