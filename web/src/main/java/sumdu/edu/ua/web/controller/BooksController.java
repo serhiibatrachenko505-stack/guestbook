@@ -20,14 +20,14 @@ import sumdu.edu.ua.core.service.BookService;
 import sumdu.edu.ua.web.SortParam;
 import sumdu.edu.ua.web.dto.BookForm;
 import sumdu.edu.ua.web.dto.CommentForm;
-import sumdu.edu.ua.web.service.MailService; // LR7
+import sumdu.edu.ua.web.service.MailService;
 
 /**
  * MVC-контролер сторінок каталогу. Методи повертають ІМ'Я шаблону (View),
  * а дані передають у шаблон через Model.
  *   GET  /books           -> templates/books.html
  *   GET  /books/add       -> templates/book-form.html
- *   POST /books/add       -> збереження, лист адміністратору, redirect:/books
+ *   POST /books/add       -> збереження, redirect:/books
  *   GET  /books/{id}      -> templates/book.html (книга + відгуки)
  */
 @Controller
@@ -37,15 +37,15 @@ public class BooksController {
 
     private final BookService books;
     private final BookPageModel bookPage;
+    private final MailService mailService;
     private final int defaultPageSize;
-    private final MailService mailService; // LR7
 
-    public BooksController(BookService books, BookPageModel bookPage, LibraryProperties props,
-                           MailService mailService) { // LR7
+    public BooksController(BookService books, BookPageModel bookPage, MailService mailService,
+                           LibraryProperties props) {
         this.books = books;
         this.bookPage = bookPage;
+        this.mailService = mailService;
         this.defaultPageSize = props.books().defaultPageSize();
-        this.mailService = mailService; // LR7
     }
 
     @GetMapping
@@ -72,22 +72,19 @@ public class BooksController {
                           BindingResult binding,
                           RedirectAttributes redirect) {
         if (binding.hasErrors()) {
-            return "book-form";
+            return "book-form";                 // та сама форма з помилками під полями
         }
         try {
             Book saved = books.add(form.getTitle(), form.getAuthor(), form.getPubYear());
             log.info("Book created: id={}, title='{}'", saved.getId(), saved.getTitle());
-
-            // LR7: notify admin by e-mail; the book is already saved, so a mail error must not break the page
             try {
-                mailService.sendNewBookEmail(saved);
-            } catch (RuntimeException e) {
-                log.warn("Book saved, but email was not sent: {}", e.getMessage());
+                mailService.sendNewBookEmail(saved);       // ЛР7: HTML-лист адміністратору
+            } catch (Exception e) {
+                log.warn("New book saved, but email was not sent: {}", e.getMessage());
             }
-
             redirect.addFlashAttribute("message", "msg.bookAdded");
             return "redirect:/books";
-        } catch (ValidationException e) {
+        } catch (ValidationException e) {      // правила з core, яких не покриває валідація форми
             binding.reject("error.validation", new Object[]{e.getMessage()}, e.getMessage());
             return "book-form";
         }

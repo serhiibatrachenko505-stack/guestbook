@@ -15,8 +15,10 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
+import sumdu.edu.ua.web.service.MailService;
 
 /** HTML-сторінки Thymeleaf: контролер -> Model -> шаблон, форми і локалізація. */
 @SpringBootTest
@@ -25,6 +27,10 @@ class PagesMvcTest {
 
     @Autowired
     private MockMvc mvc;
+
+    /** У тестах лист не надсилається: MailService підмінено заглушкою Mockito. */
+    @MockBean
+    private MailService mailService;
 
     @Test
     void booksPageRendersTemplateWithModel() throws Exception {
@@ -94,6 +100,42 @@ class PagesMvcTest {
                 .andExpect(status().isOk())
                 .andExpect(view().name("book"))
                 .andExpect(model().attributeExists("book", "comments", "commentForm"));
+    }
+
+    @Test
+    void usersPageListsUsers() throws Exception {
+        mvc.perform(get("/users"))
+                .andExpect(status().isOk())
+                .andExpect(view().name("users"))
+                .andExpect(content().string(containsString("Олена")));
+    }
+
+    @Test
+    void userCommentsPageShowsCommentsWithBooks() throws Exception {
+        mvc.perform(get("/users/2/comments"))          // Олена з V2__seed_data.sql
+                .andExpect(status().isOk())
+                .andExpect(view().name("user-comments"))
+                .andExpect(model().attributeExists("user", "comments", "books"))
+                .andExpect(content().string(containsString("Clean Code")));
+    }
+
+    @Test
+    void unknownUserShowsErrorPage() throws Exception {
+        mvc.perform(get("/users/999999/comments"))
+                .andExpect(status().isNotFound())
+                .andExpect(view().name("error"));
+    }
+
+    @Test
+    void commentFromFormIsLinkedToUser() throws Exception {
+        mvc.perform(post("/comments")
+                        .param("bookId", "2")
+                        .param("author", "Test Reader")
+                        .param("text", "Comment from form"))
+                .andExpect(status().is3xxRedirection())
+                .andExpect(redirectedUrl("/books/2"));
+        mvc.perform(get("/users"))
+                .andExpect(content().string(containsString("Test Reader")));
     }
 
     @Test

@@ -32,7 +32,8 @@ class WebArchitectureTest {
         noClasses()
                 .that().resideInAPackage("sumdu.edu.ua.web..")
                 .should().dependOnClassesThat()
-                .resideInAnyPackage("sumdu.edu.ua.persistence..", "java.sql..", "org.h2..")
+                .resideInAnyPackage("sumdu.edu.ua.persistence..", "java.sql..", "org.h2..",
+                        "jakarta.persistence..", "org.springframework.data..")
                 .because("контролери працюють лише з сервісами core")
                 .check(classes);
     }

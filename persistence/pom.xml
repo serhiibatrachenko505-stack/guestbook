@@ -15,10 +15,6 @@
     <name>persistence</name>
     <packaging>jar</packaging>
 
-    <properties>
-        <h2.version>2.2.224</h2.version>
-    </properties>
-
     <dependencies>
         <!-- залежність на core: реалізуємо його порти -->
         <dependency>
@@ -27,27 +23,30 @@
             <version>${project.version}</version>
         </dependency>
 
-        <!-- H2 JDBC -->
+        <!-- JPA / Hibernate / Spring Data JPA (версії — з BOM Spring Boot у parent) -->
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-data-jpa</artifactId>
+        </dependency>
+
+        <!-- Міграції схеми БД -->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
+
+        <!-- Драйвер H2 потрібен лише під час виконання: у коді немає жодного звернення до JDBC -->
         <dependency>
             <groupId>com.h2database</groupId>
             <artifactId>h2</artifactId>
-            <version>${h2.version}</version>
+            <scope>runtime</scope>
         </dependency>
 
-        <!-- Spring: анотації @Repository / @Component (версія — з BOM у parent) -->
+        <!-- тест репозиторіїв (@DataJpaTest) -->
         <dependency>
-            <groupId>org.springframework</groupId>
-            <artifactId>spring-context</artifactId>
-        </dependency>
-        <!-- @PostConstruct / @PreDestroy -->
-        <dependency>
-            <groupId>jakarta.annotation</groupId>
-            <artifactId>jakarta.annotation-api</artifactId>
-        </dependency>
-
-        <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-api</artifactId>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 </project>

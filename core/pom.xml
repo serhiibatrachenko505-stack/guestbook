@@ -15,5 +15,13 @@
     <name>core</name>
     <packaging>jar</packaging>
 
-    <!-- core не має жодних інфраструктурних залежностей: тільки чиста Java -->
+    <!-- core не залежить від Spring, JDBC і Servlet API.
+         Єдина залежність — стандартна анотація меж транзакцій (Jakarta Transactions API),
+         яку Spring розпізнає так само, як власну @Transactional. -->
+    <dependencies>
+        <dependency>
+            <groupId>jakarta.transaction</groupId>
+            <artifactId>jakarta.transaction-api</artifactId>
+        </dependency>
+    </dependencies>
 </project>

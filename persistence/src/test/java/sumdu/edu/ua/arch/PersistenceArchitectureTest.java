@@ -10,6 +10,7 @@ import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.Test;
 import sumdu.edu.ua.core.port.CatalogRepositoryPort;
 import sumdu.edu.ua.core.port.CommentRepositoryPort;
+import sumdu.edu.ua.core.port.UserRepositoryPort;
 
 /** Архітектурні правила модуля persistence. */
 class PersistenceArchitectureTest {
@@ -37,6 +38,7 @@ class PersistenceArchitectureTest {
         classes()
                 .that().implement(CatalogRepositoryPort.class)
                 .or().implement(CommentRepositoryPort.class)
+                .or().implement(UserRepositoryPort.class)
                 .should().resideInAPackage("sumdu.edu.ua.persistence..")
                 .check(classes);
     }
@@ -57,6 +59,35 @@ class PersistenceArchitectureTest {
                 .should().dependOnClassesThat()
                 .resideInAPackage("sumdu.edu.ua.core.service..")
                 .because("persistence реалізує лише порти і не викликає бізнес-логіку")
+                .check(classes);
+    }
+
+    @Test
+    void noJdbcAnywhere() {
+        noClasses()
+                .that().resideInAPackage("sumdu.edu.ua..")
+                .should().dependOnClassesThat()
+                .resideInAnyPackage("java.sql..", "javax.sql..")
+                .because("доступ до даних виконується через JPA/Hibernate, а не через JDBC")
+                .check(classes);
+    }
+
+    @Test
+    void entitiesShouldResideInPersistenceEntityPackage() {
+        classes()
+                .that().areAnnotatedWith(jakarta.persistence.Entity.class)
+                .should().resideInAPackage("sumdu.edu.ua.persistence.jpa.entity..")
+                .andShould().haveSimpleNameEndingWith("Entity")
+                .check(classes);
+    }
+
+    @Test
+    void entitiesShouldNotLeakToCore() {
+        noClasses()
+                .that().resideInAPackage("sumdu.edu.ua.core..")
+                .should().dependOnClassesThat()
+                .resideInAnyPackage("sumdu.edu.ua.persistence..", "jakarta.persistence..")
+                .because("доменна модель core не залежить від ORM")
                 .check(classes);
     }
 }

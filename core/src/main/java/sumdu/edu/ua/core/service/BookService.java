@@ -1,5 +1,6 @@
 package sumdu.edu.ua.core.service;
 
+import jakarta.transaction.Transactional;
 import java.time.Year;
 import java.util.Set;
 import sumdu.edu.ua.core.domain.Book;
@@ -37,6 +38,7 @@ public class BookService {
                 .orElseThrow(() -> new NotFoundException("Book " + id + " not found"));
     }
 
+    @Transactional
     public Book add(String title, String author, Integer pubYear) {
         String t = required(title, "title", MAX_TITLE);
         String a = required(author, "author", MAX_AUTHOR);

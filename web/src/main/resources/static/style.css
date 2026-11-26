@@ -17,5 +17,7 @@ th, td { text-align: left; padding: .35rem .5rem; border-bottom: 1px solid #eee;
 .empty, .meta { color: #666; }
 .comments li { margin: .4rem 0; }
 form.inline { display: inline; }
+.user-comments li { border-bottom: 1px solid #eee; padding: .3rem 0; list-style: none; }
+.user-comments p { margin: .2rem 0; }
 small { color: #777; }
 a.button { display: inline-block; padding: .4rem .8rem; border: 1px solid #1a5fb4; border-radius: 4px; text-decoration: none; }

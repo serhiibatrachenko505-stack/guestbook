@@ -4,19 +4,22 @@ import java.time.Clock;
 import java.time.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.aop.support.AopUtils;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import sumdu.edu.ua.core.port.CatalogRepositoryPort;
 import sumdu.edu.ua.core.port.CommentRepositoryPort;
+import sumdu.edu.ua.core.port.UserRepositoryPort;
 import sumdu.edu.ua.core.service.BookService;
 import sumdu.edu.ua.core.service.CommentService;
+import sumdu.edu.ua.core.service.UserService;
 
 /**
  * Java-конфігурація бінів.
  * Сервіси з core не мають анотацій Spring (core залишається чистим),
  * тому вони реєструються тут через @Bean. Spring сам передає в методи
- * потрібні залежності — реалізації портів (@Repository з модуля persistence).
+ * реалізації портів — JPA-адаптери з модуля persistence.
  */
 @Configuration
 @EnableConfigurationProperties(LibraryProperties.class)
@@ -31,18 +34,29 @@ public class AppConfig {
 
     @Bean
     public BookService bookService(CatalogRepositoryPort bookRepo) {
-        log.info("Creating bean bookService with {}", bookRepo.getClass().getSimpleName());
+        log.info("Creating bean bookService with {}", name(bookRepo));
         return new BookService(bookRepo);
+    }
+
+    @Bean
+    public UserService userService(UserRepositoryPort userRepo) {
+        log.info("Creating bean userService with {}", name(userRepo));
+        return new UserService(userRepo);
     }
 
     @Bean
     public CommentService commentService(CommentRepositoryPort commentRepo,
                                          CatalogRepositoryPort bookRepo,
+                                         UserService userService,
                                          Clock clock,
                                          LibraryProperties props) {
         Duration window = Duration.ofHours(props.comments().deleteWindowHours());
-        log.info("Creating bean commentService with {} (delete window = {} h)",
-                commentRepo.getClass().getSimpleName(), window.toHours());
-        return new CommentService(commentRepo, bookRepo, clock, window);
+        log.info("Creating bean commentService with {} (delete window = {} h)", name(commentRepo), window.toHours());
+        return new CommentService(commentRepo, bookRepo, userService, clock, window);
+    }
+
+    /** Ім'я класу реалізації без суфікса проксі Spring ($$SpringCGLIB$$). */
+    private static String name(Object bean) {
+        return AopUtils.getTargetClass(bean).getSimpleName();
     }
 }

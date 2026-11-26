@@ -5,6 +5,32 @@ spring:
   main:
     banner-mode: console
 
+  # ===== База даних (ЛР8): H2 + JPA/Hibernate + Flyway =====
+  # новий файл БД: стара library.mv.db створена без Flyway і з іншою схемою
+  datasource:
+    url: jdbc:h2:file:./data/library-jpa;AUTO_SERVER=TRUE
+    username: sa
+    password:
+    driver-class-name: org.h2.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: none            # схему створює лише Flyway, Hibernate її не змінює
+    show-sql: true              # SQL-запити Hibernate у консолі
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+
+  flyway:
+    enabled: true
+    locations: classpath:db/migration
+
+  h2:
+    console:
+      enabled: true             # http://localhost:8080/h2-console
+      path: /h2-console
+
   # файли локалізації: messages.properties (uk), messages_en.properties (en)
   messages:
     basename: messages
@@ -23,7 +49,7 @@ spring:
     host: smtp.gmail.com
     port: 587
     username: serhiibatrachenko505@gmail.com
-    password: ${MAIL_APP_PASSWORD}
+    password: ${MAIL_APP_PASSWORD:}
     default-encoding: UTF-8
     properties:
       mail:
@@ -54,7 +80,7 @@ logging:
 # ---------- власні параметри застосунку (LibraryProperties) ----------
 library:
   title: "Каталог книг"
-  version: "6.0"
+  version: "8.0"
   books:
     default-page-size: 10
   comments:

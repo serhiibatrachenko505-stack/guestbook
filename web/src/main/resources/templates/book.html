@@ -21,7 +21,8 @@
 
 <ul class="comments" th:unless="${#lists.isEmpty(comments)}">
     <li th:each="c : ${comments}">
-        <b th:text="${c.author}">Олена</b>:
+        <a th:if="${c.userId}" th:href="@{/users/{id}/comments(id=${c.userId})}"><b th:text="${c.author}">Олена</b></a>
+        <b th:unless="${c.userId}" th:text="${c.author}">Гість</b><b>:</b>
         <span th:text="${c.text}">Класика</span>
         <small th:text="${@dates.format(c.createdAt)}">20.11.2026 10:00</small>
         <form th:action="@{/comments/delete}" method="post" class="inline">

@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" th:lang="${#locale.language}">
+<head th:replace="~{fragments/header :: head(#{title.users})}"></head>
+<body>
+<header th:replace="~{fragments/header :: header}"></header>
+
+<h1 th:text="#{title.users}">Користувачі</h1>
+
+<p class="empty" th:if="${#maps.isEmpty(users)}" th:text="#{label.noUsers}">Немає користувачів</p>
+
+<table th:unless="${#maps.isEmpty(users)}">
+    <thead>
+    <tr>
+        <th>#</th>
+        <th th:text="#{label.username}">Ім’я</th>
+        <th th:text="#{label.role}">Роль</th>
+        <th th:text="#{label.commentsCount}">Відгуків</th>
+    </tr>
+    </thead>
+    <tbody>
+    <tr th:each="entry : ${users}">
+        <td th:text="${entry.key.id}">1</td>
+        <td><a th:href="@{/users/{id}/comments(id=${entry.key.id})}" th:text="${entry.key.username}">Олена</a></td>
+        <td th:text="${entry.key.role}">USER</td>
+        <td th:text="${entry.value}">3</td>
+    </tr>
+    </tbody>
+</table>
+
+<footer th:replace="~{fragments/header :: footer}"></footer>
+</body>
+</html>

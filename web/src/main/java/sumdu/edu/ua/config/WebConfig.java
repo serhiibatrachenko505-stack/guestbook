@@ -24,7 +24,7 @@ public class WebConfig implements WebMvcConfigurer {
     @Override
     public void addInterceptors(InterceptorRegistry registry) {
         registry.addInterceptor(loggingInterceptor)
-                .addPathPatterns("/books/**", "/comments/**", "/api/**");
+                .addPathPatterns("/books/**", "/comments/**", "/users/**", "/api/**");
     }
 
     /** Головна сторінка -> каталог. */
